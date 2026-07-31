@@ -120,25 +120,40 @@ KIP_FALLBACK_REASONING = {
 def predict_frustration_level(retry_count, time_taken, tab_switches, mouse_idle_time, typing_pauses, used_visual_toggle):
     """
     Layer 1: Frustration Prediction
-    Uses Decision Tree if loaded, otherwise falls back to a rule-based mock model.
+    Uses Decision Tree if loaded, with smart overrides for non-typing questions (like MCQs).
     """
+    detected = "Low"
     if clf is not None:
         try:
             used_vt = 1 if used_visual_toggle else 0
             features = [[retry_count, time_taken, tab_switches, mouse_idle_time, typing_pauses, used_vt]]
             pred = clf.predict(features)[0]
             mapping = {0: "Low", 1: "Medium", 2: "High"}
-            return mapping.get(pred, "Low")
+            detected = mapping.get(pred, "Low")
         except Exception as e:
             print(f"Error running model prediction: {e}. Using rule-based fallback.")
-            
-    # Rule-based fallback model (Varies realistically for testing / offline devs)
-    if retry_count >= 3 or tab_switches >= 3:
-        return "High"
-    elif retry_count >= 1 or mouse_idle_time > 8.0 or typing_pauses >= 3:
-        return random.choices(["Medium", "High", "Low"], weights=[0.70, 0.20, 0.10])[0]
+            detected = "Low"
     else:
-        return random.choices(["Low", "Medium"], weights=[0.85, 0.15])[0]
+        # Static fallback mock model
+        if retry_count >= 2 or tab_switches >= 2:
+            detected = "High"
+        elif retry_count == 1 or mouse_idle_time > 4.0:
+            detected = "Medium"
+        else:
+            detected = "Low"
+
+    # ================= SMART OVERRIDES (For MCQ / zero-typing questions) =================
+    # If the user has multiple retries, it must be High frustration
+    if retry_count >= 2:
+        return "High"
+    # If they failed the question once, it's at least Medium
+    if retry_count == 1:
+        return "Medium"
+    # If they are hesitating/idle for a long time, elevate to Medium
+    if mouse_idle_time > 6.0:
+        return "Medium"
+        
+    return detected
 
 def verify_frustration_with_llm(predicted_label, retry_count, time_taken, tab_switches, mouse_idle_time, typing_pauses, used_visual_toggle):
     """
