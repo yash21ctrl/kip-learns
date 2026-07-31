@@ -1,0 +1,228 @@
+{
+  "lessons": {
+    "math": [
+      {
+        "id": "les_math_01",
+        "topic": "Fractions",
+        "title": "Adding Same-Denominator Fractions",
+        "content": "When fractions share the same bottom number (denominator), keep that number the same and just add the top numbers (numerators)!"
+      },
+      {
+        "id": "les_math_02",
+        "topic": "Decimals",
+        "title": "Aligning Decimals",
+        "content": "Line up the decimal points vertically before adding or subtracting. It keeps place values like tenths and hundredths organized!"
+      }
+    ],
+    "science": [
+      {
+        "id": "les_sci_01",
+        "topic": "Photosynthesis",
+        "title": "How Plants Eat",
+        "content": "Plants take in Carbon Dioxide, Water, and Sunlight to create Oxygen and Sugar (Glucose). They make their own food!"
+      },
+      {
+        "id": "les_sci_02",
+        "topic": "States of Matter",
+        "title": "Solids, Liquids, and Gases",
+        "content": "Solids keep their shape, liquids flow to fit their container, and gases expand to fill any space available."
+      }
+    ],
+    "english": [
+      {
+        "id": "les_eng_01",
+        "topic": "Parts of Speech",
+        "title": "Nouns vs Adjectives",
+        "content": "A noun is a person, place, or thing. An adjective describes that noun (like 'blue sky' or 'fast car')."
+      },
+      {
+        "id": "les_eng_02",
+        "topic": "Verb Tenses",
+        "title": "Past vs Present Tense",
+        "content": "Present tense happens right now (I run). Past tense already happened (I ran)."
+      }
+    ]
+  },
+  "questions": [
+    {
+      "id": "q_m_01",
+      "subject": "math",
+      "topic": "Fractions",
+      "sub_topic": "Same Denominator Addition",
+      "difficulty": "easy",
+      "type": "mcq",
+      "question_text": "What is 1/5 + 2/5?",
+      "options": ["2/5", "3/5", "3/10", "1/5"],
+      "correct_answer": "3/5",
+      "hint": "Add the top numbers (1 + 2) and keep the bottom number (5)."
+    },
+    {
+      "id": "q_m_02",
+      "subject": "math",
+      "topic": "Fractions",
+      "sub_topic": "Same Denominator Addition",
+      "difficulty": "easy",
+      "type": "mcq",
+      "question_text": "What is 2/7 + 4/7?",
+      "options": ["6/7", "6/14", "8/7", "2/7"],
+      "correct_answer": "6/7",
+      "hint": "2 + 4 = 6. The bottom number stays 7."
+    },
+    {
+      "id": "q_m_03",
+      "subject": "math",
+      "topic": "Fractions",
+      "sub_topic": "Same Denominator Addition",
+      "difficulty": "medium",
+      "type": "mcq",
+      "question_text": "What is 3/8 + 4/8?",
+      "options": ["7/16", "1/8", "7/8", "12/8"],
+      "correct_answer": "7/8",
+      "hint": "3 eighths plus 4 eighths gives 7 eighths."
+    },
+    {
+      "id": "q_m_04",
+      "subject": "math",
+      "topic": "Fractions",
+      "sub_topic": "Same Denominator Addition",
+      "difficulty": "medium",
+      "type": "mcq",
+      "question_text": "What is 5/12 + 2/12?",
+      "options": ["7/24", "7/12", "10/12", "3/12"],
+      "correct_answer": "7/12",
+      "hint": "5 + 2 = 7. Keep 12 on the bottom."
+    },
+    {
+      "id": "q_m_05",
+      "subject": "math",
+      "topic": "Fractions",
+      "sub_topic": "Same Denominator Addition",
+      "difficulty": "hard",
+      "type": "mcq",
+      "question_text": "Simplify: What is 2/10 + 3/10 reduced to simplest form?",
+      "options": ["5/10", "1/2", "5/20", "2/5"],
+      "correct_answer": "1/2",
+      "hint": "2/10 + 3/10 = 5/10. Divide both 5 and 10 by 5."
+    },
+    {
+      "id": "q_s_01",
+      "subject": "science",
+      "topic": "Photosynthesis",
+      "sub_topic": "Plant Inputs",
+      "difficulty": "easy",
+      "type": "mcq",
+      "question_text": "What gas do plants absorb from the air during photosynthesis?",
+      "options": ["Oxygen", "Carbon Dioxide", "Nitrogen", "Helium"],
+      "correct_answer": "Carbon Dioxide",
+      "hint": "It starts with 'Carbon'."
+    },
+    {
+      "id": "q_s_02",
+      "subject": "science",
+      "topic": "Photosynthesis",
+      "sub_topic": "Plant Outputs",
+      "difficulty": "easy",
+      "type": "mcq",
+      "question_text": "What gas do plants release into the air that humans breathe?",
+      "options": ["Carbon Dioxide", "Oxygen", "Methane", "Hydrogen"],
+      "correct_answer": "Oxygen",
+      "hint": "Humans need this gas to survive."
+    },
+    {
+      "id": "q_s_03",
+      "subject": "science",
+      "topic": "Photosynthesis",
+      "sub_topic": "Energy Source",
+      "difficulty": "medium",
+      "type": "mcq",
+      "question_text": "Where do plants get the primary energy needed for photosynthesis?",
+      "options": ["Soil nutrients", "Wind", "Sunlight", "Rainwater"],
+      "correct_answer": "Sunlight",
+      "hint": "Think of the bright light in the sky."
+    },
+    {
+      "id": "q_s_04",
+      "subject": "science",
+      "topic": "Photosynthesis",
+      "sub_topic": "Plant Energy Storage",
+      "difficulty": "medium",
+      "type": "mcq",
+      "question_text": "What type of sugar do plants make during photosynthesis for food?",
+      "options": ["Glucose", "Sucrose", "Lactose", "Fructose"],
+      "correct_answer": "Glucose",
+      "hint": "It starts with 'G'."
+    },
+    {
+      "id": "q_s_05",
+      "subject": "science",
+      "topic": "Photosynthesis",
+      "sub_topic": "Cell Structure",
+      "difficulty": "hard",
+      "type": "mcq",
+      "question_text": "In which part of the plant cell does photosynthesis take place?",
+      "options": ["Nucleus", "Mitochondria", "Chloroplast", "Cell Wall"],
+      "correct_answer": "Chloroplast",
+      "hint": "It contains the green pigment chlorophyll."
+    },
+    {
+      "id": "q_e_01",
+      "subject": "english",
+      "topic": "Parts of Speech",
+      "sub_topic": "Adjectives",
+      "difficulty": "easy",
+      "type": "mcq",
+      "question_text": "Which word is an adjective in: 'The bright star shines'?",
+      "options": ["The", "bright", "star", "shines"],
+      "correct_answer": "bright",
+      "hint": "Which word describes what the star looks like?"
+    },
+    {
+      "id": "q_e_02",
+      "subject": "english",
+      "topic": "Parts of Speech",
+      "sub_topic": "Nouns",
+      "difficulty": "easy",
+      "type": "mcq",
+      "question_text": "Which word is a noun in: 'The dog barked loudly'?",
+      "options": ["The", "dog", "barked", "loudly"],
+      "correct_answer": "dog",
+      "hint": "Find the animal/thing in the sentence."
+    },
+    {
+      "id": "q_e_03",
+      "subject": "english",
+      "topic": "Parts of Speech",
+      "sub_topic": "Verbs",
+      "difficulty": "medium",
+      "type": "mcq",
+      "question_text": "Which word is an action verb in: 'Maria quickly ran home'?",
+      "options": ["Maria", "quickly", "ran", "home"],
+      "correct_answer": "ran",
+      "hint": "What physical action did Maria do?"
+    },
+    {
+      "id": "q_e_04",
+      "subject": "english",
+      "topic": "Parts of Speech",
+      "sub_topic": "Adverbs",
+      "difficulty": "medium",
+      "type": "mcq",
+      "question_text": "Which word is an adverb in: 'He sang sweetly'?",
+      "options": ["He", "sang", "sweetly", "song"],
+      "correct_answer": "sweetly",
+      "hint": "Which word describes HOW he sang (often ends in -ly)?"
+    },
+    {
+      "id": "q_e_05",
+      "subject": "english",
+      "topic": "Parts of Speech",
+      "sub_topic": "Pronouns",
+      "difficulty": "hard",
+      "type": "mcq",
+      "question_text": "Which pronoun correctly replaces the underline: '<u>Sarah and Alex</u> went to school'?",
+      "options": ["He", "They", "We", "Them"],
+      "correct_answer": "They",
+      "hint": "Use a subject pronoun for more than one person."
+    }
+  ]
+}
