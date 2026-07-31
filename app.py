@@ -389,9 +389,9 @@ def get_next_question():
     next_q = None
     if latest_record and latest_record.get("frustration_label") == "High":
         failed_q_id = latest_record.get("question_id")
-        failed_q = next((q for q in questions if q["id"] == failed_q_id), None)
+        failed_q = next((q for q in questions if str(q["id"]) == str(failed_q_id)), None)
         if failed_q:
-            sub_skill = failed_q.get("sub_skill")
+            sub_skill = failed_q.get("sub_skill") or failed_q.get("sub_topic")
             if failed_q.get("difficulty") == "hard":
                 difficulty_preference = ["medium", "easy"]
             else:
@@ -399,7 +399,8 @@ def get_next_question():
                 
             for diff in difficulty_preference:
                 for q in questions:
-                    if q["id"] not in asked_set and q.get("sub_skill") == sub_skill and q.get("difficulty") == diff:
+                    q_sub_skill = q.get("sub_skill") or q.get("sub_topic")
+                    if q["id"] not in asked_set and q_sub_skill == sub_skill and q.get("difficulty") == diff:
                         next_q = q
                         break
                 if next_q:
