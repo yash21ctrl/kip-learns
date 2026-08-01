@@ -21,8 +21,8 @@ def load_csv_data(filepath):
     return data
 
 def main():
-    # Use relabeled dataset where objective behavior signals replace lazy self-reported labels
-    csv_file = CSV_RELABELED
+    # Train strictly on CSV_CLEANED (688 rows of real human labels, filtering out 14.1% noise) to avoid circular data leakage.
+    csv_file = CSV_CLEANED
     print(f"Loading training dataset from {csv_file}...")
     
     data = load_csv_data(csv_file)

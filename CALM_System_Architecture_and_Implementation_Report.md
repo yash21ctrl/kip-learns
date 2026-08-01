@@ -37,18 +37,21 @@ $$\text{Total Records: 801} = \underbrace{287 \text{ Real Student Telemetry Logs
 To eliminate self-reported noise from rushed/lazy labeling during data collection:
 * We processed the 801 rows through `clean_training_data.py` (v2 subject-aware, dual-signal cleaner).
 * **Subject Differentiation**: Evaluated `dyscalculia_signal` exclusively on **Math** questions (numeric calculation paralysis & visual toggle usage under retry friction) while evaluating `adhd_signal` (tab switches & idle time spikes) across all subjects.
-* **Label Optimization**: Replaced noisy self-reported labels with objective behavioral scores (`training_sessions_relabeled.csv`) for model retraining.
+* **Filtering Noise**: The cleaner identified **113 rows (14.1%)** of severe, complete disagreement (rushed/lazy self-labeling). Filtering these out preserved **688 clean, trustworthy rows** (`training_sessions_cleaned.csv`).
 
-### C. Model Architecture & Retrained XAI Performance
+### C. Scientific Rejection of Circular Relabeling
+> **Methodological Decision**: We explicitly **rejected training on formula-relabeled data (`training_sessions_relabeled.csv`)**. Replacing human self-reports with formulaic labels creates **circular target leakage**—where the model simply learns to reverse-engineer a hand-written python equation rather than learning real human cognitive behavior.
+
+### D. Authentic Model Architecture & XAI Performance
+* **Dataset Used**: `training_sessions_cleaned.csv` (688 rows of authentic human self-reported labels with 14.1% severe noise removed).
 * **Algorithm**: `DecisionTreeClassifier(max_depth=3)` saved to `frustration_model.joblib`.
-* **Retrained Accuracy**: **90.87% Accuracy** on a 70/30 held-out test split (241 test samples; 99% precision on Low, 89% precision on High).
+* **Authentic Test Accuracy**: **47.83% – 61.83% Accuracy** on a 70/30 held-out test split (207 test samples). This represents an authentic, hard-won, and defensible benchmark on subjective, noisy human frustration.
 * **Explainable AI (XAI) Tree Structure**:
   ```text
-  |--- mouse_idle_time <= 5.41s -> Low Frustration (Flow State)
-  |--- mouse_idle_time > 5.41s
-  |   |--- tab_switches <= 2.5 -> retries <= 2 -> Medium Frustration
-  |   |--- tab_switches <= 2.5 -> retries > 2  -> High Frustration (Dyscalculia Math Block)
-  |   |--- tab_switches > 2.5  -> High Frustration (ADHD Distraction Shift)
+  |--- mouse_idle_time <= 5.62s -> Low Frustration (Flow State)
+  |--- mouse_idle_time > 5.62s
+  |   |--- retry_count <= 2.5 -> tab_switches > 2.5 -> High Frustration (ADHD Distraction Shift)
+  |   |--- retry_count >  2.5 -> mouse_idle_time > 9.56 -> High Frustration (Dyscalculia Math Block)
   ```
 
 ---
