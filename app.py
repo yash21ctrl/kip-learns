@@ -1,4 +1,16 @@
 import os
+
+# Custom dotenv loader to load API key locally without Git security leaks
+if os.path.exists(".env"):
+    try:
+        with open(".env", "r") as f:
+            for line in f:
+                if line.strip() and not line.strip().startswith("#"):
+                    if "=" in line:
+                        k, v = line.strip().split("=", 1)
+                        os.environ[k.strip()] = v.strip()
+    except Exception as e:
+        print(f"Error loading .env: {e}")
 import json
 import time
 import csv
