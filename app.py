@@ -167,10 +167,31 @@ def predict_frustration_level(retry_count, time_taken, tab_switches, mouse_idle_
         
     return detected
 
+def call_gemini_with_fallback(prompt, max_tokens=60, temp=0.7, timeout=2.5):
+    """Try multiple Gemini models dynamically to handle model deprecation and rate limits."""
+    models_to_try = ['gemini-2.0-flash', 'gemini-flash-latest', 'gemini-2.0-flash-lite', 'gemini-1.5-flash']
+    for m in models_to_try:
+        try:
+            model = genai.GenerativeModel(m)
+            response = model.generate_content(
+                prompt,
+                generation_config=genai.types.GenerationConfig(
+                    max_output_tokens=max_tokens,
+                    temperature=temp
+                ),
+                request_options={"timeout": timeout}
+            )
+            text = response.text.strip()
+            if text:
+                return text
+        except Exception as e:
+            continue
+    return None
+
 def verify_frustration_with_llm(predicted_label, retry_count, time_taken, tab_switches, mouse_idle_time, typing_pauses, used_visual_toggle):
     """
     Layer 2: LLM Verification (Sanity Checker)
-    Double-checks classifier prediction against raw numbers using Gemini 1.5 Flash.
+    Double-checks classifier prediction against raw numbers using Gemini.
     """
     if not GEMINI_API_KEY:
         return predicted_label
@@ -198,21 +219,9 @@ def verify_frustration_with_llm(predicted_label, retry_count, time_taken, tab_sw
     
     Output ONLY one word: "Low", "Medium", or "High". Do not add any punctuation, markdown, or extra text.
     """
-    try:
-        model = genai.GenerativeModel('gemini-1.5-flash')
-        response = model.generate_content(
-            prompt,
-            generation_config=genai.types.GenerationConfig(
-                max_output_tokens=5,
-                temperature=0.0
-            ),
-            request_options={"timeout": 1.5}
-        )
-        verified_label = response.text.strip()
-        if verified_label in ["Low", "Medium", "High"]:
-            return verified_label
-    except Exception as e:
-        print(f"Gemini verification failed or timed out: {e}. Falling back to prediction: {predicted_label}")
+    res = call_gemini_with_fallback(prompt, max_tokens=5, temp=0.0, timeout=2.0)
+    if res in ["Low", "Medium", "High"]:
+        return res
         
     return predicted_label
 
@@ -797,28 +806,18 @@ def get_kip_reasoning():
     - Do not mention technical terms like "classifier", "telemetry", "model", or "verification".
     """
     
-    try:
-        model = genai.GenerativeModel('gemini-1.5-flash')
-        response = model.generate_content(
-            prompt,
-            generation_config=genai.types.GenerationConfig(
-                max_output_tokens=60,
-                temperature=0.7
-            ),
-            request_options={"timeout": 1.5}
-        )
-        reasoning = response.text.strip()
+    res = call_gemini_with_fallback(prompt, max_tokens=60, temp=0.7, timeout=2.5)
+    if res:
         return jsonify({
             "frustration_level": verified_frustration,
-            "reasoning": reasoning
+            "reasoning": res
         })
-    except Exception as e:
-        print(f"Gemini reasoning call failed or timed out: {e}")
-        reasoning = get_static_fallback_narration(verified_frustration, sub_skill)
-        return jsonify({
-            "frustration_level": verified_frustration,
-            "reasoning": reasoning
-        })
+        
+    reasoning = get_static_fallback_narration(verified_frustration, sub_skill)
+    return jsonify({
+        "frustration_level": verified_frustration,
+        "reasoning": reasoning
+    })
 
 if __name__ == '__main__':
     # Run server on port 5000
