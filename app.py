@@ -174,11 +174,10 @@ def call_gemini_with_fallback(prompt, max_tokens=60, temp=0.7, timeout=2.5):
             continue
     return None
 
-def verify_frustration_with_llm(predicted_label, is_correct, retry_count, time_taken, tab_switches, mouse_idle_time, typing_pauses, used_visual_toggle, q_text="", q_diff="easy"):
+def verify_frustration_with_llm(predicted_label, is_correct, retry_count, time_taken, tab_switches, mouse_idle_time, typing_pauses, used_visual_toggle, q_text="", q_diff="easy", q_type="mcq", off_tab_duration=0.0):
     """
     Layer 2: LLM Verification (Cognitive Auditor)
-    Acts as a genuine AI auditor cross-examining Layer 1 Decision Tree predictions.
-    Catches cognitive edge cases where statistical ML models misread human intent.
+    Cross-examines Layer 1 Decision Tree statistical predictions using Question-Type & Difficulty Matrix benchmarks.
     """
     if not GEMINI_API_KEY:
         # Offline fallback: Trust Layer 1 Decision Tree prediction directly
@@ -187,29 +186,39 @@ def verify_frustration_with_llm(predicted_label, is_correct, retry_count, time_t
     q_len = len(str(q_text))
     prompt = f"""
     You are an AI Cognitive Auditor for an adaptive learning companion (CALM).
-    Your job is to cross-examine Layer 1's Decision Tree prediction against raw student telemetry and detect if the ML model made a mistake.
+    Cross-examine Layer 1's Decision Tree ML prediction against raw student telemetry using Question-Type & Difficulty Matrix benchmarks.
     
-    Layer 1 Decision Tree Prediction: {predicted_label}
+    Layer 1 ML Model Prediction: {predicted_label}
     
-    Question Context:
-    - Difficulty: {q_diff}
-    - Question Text Length: {q_len} characters
+    Question Metadata:
+    - Question Type: {q_type} (MCQ, Short Typing, Full Typing, Match the Following)
+    - Difficulty: {q_diff} (easy, medium, hard)
+    - Text Length: {q_len} characters
     
-    Raw Telemetry Evidence:
+    Raw Student Telemetry:
     - Answer Status: {"CORRECT" if is_correct else "INCORRECT"}
     - Attempts / Retries: {retry_count}
     - Time Taken: {time_taken:.2f} seconds
-    - Tab Switches (Off-task distraction): {tab_switches}
-    - Mouse Idle Time (Hesitation/Stalling): {mouse_idle_time:.2f} seconds
-    - Typing Pauses (Calculation blockage): {typing_pauses}
+    - Off-Tab Focus Away Duration: {off_tab_duration:.1f} seconds
+    - Tab Switches: {tab_switches}
+    - Mouse Idle Time: {mouse_idle_time:.2f} seconds
+    - Typing Pauses: {typing_pauses}
     - Used Visual Helper Scaffold: {used_visual_toggle}
     
-    Auditing Guidelines (Evaluate human intent vs ML prediction):
-    1. Correct Answers with High Idle: If Answer is CORRECT, high time/idle on a long question (>100 chars) indicates thoughtful reading and problem-solving, NOT frustration. Override prediction to "Low".
-    2. Visual Scaffold Recovery: If student used the visual toggle helper and got the answer correct, override High/Medium to "Low" (the tool resolved their cognitive block).
-    3. Impulsive Guessing: If INCORRECT in < 2.0s with 0 prior retries, override to "Medium" (distraction/impulsivity).
-    4. Genuine High Frustration: Confirm "High" if student has 2+ retries OR combination of high idle (>10s) and tab switches (>1).
-    5. Otherwise: If Layer 1 prediction makes logical sense given the telemetry, KEEP Layer 1's prediction ({predicted_label}).
+    Question-Type & Difficulty Benchmarks:
+    1. Easy MCQ: Allowed thinking benchmark = 8.0s.
+    2. Medium MCQ: Allowed thinking benchmark = 20.0s.
+    3. Hard MCQ: Allowed thinking benchmark = 40.0s (Scratchpad paper math allowance).
+    4. Match the Following: Allowed thinking benchmark = 30.0s (Pair selection allowance).
+    5. Short / Full Typing: Allowed thinking benchmark = 45.0s (Composition allowance).
+    
+    Auditing Guidelines:
+    1. Correct Answer Flow: If Answer is CORRECT, ALWAYS verify as "Low" (Mastery).
+    2. Hard MCQ / Typing / Match Allowance: High time (up to benchmark) with 0 tab switches is productive deep thinking, NOT frustration. Override prediction to "Low" or "Medium".
+    3. Visual Scaffold Recovery: If student used the visual toggle helper (👁️) and got the answer correct, override High/Medium to "Low".
+    4. Impulsive Guessing (ADHD): If INCORRECT in < 2.0s with 0 prior retries on Easy MCQ, audit to "Medium" (Impulsive misclick), NOT High.
+    5. Genuine High Frustration: Confirm "High" ONLY IF student has 2+ retries on same question OR (idle > 15s AND off_tab_duration >= 15s).
+    6. Otherwise: Keep Layer 1 ML prediction ({predicted_label}).
     
     Output ONLY one word: "Low", "Medium", or "High".
     """
@@ -559,6 +568,9 @@ def submit_answer():
         retry_count = retry_count + 1
         session["retry_counts"][q_id_str] = retry_count
         
+    off_tab_duration = float(data.get('off_tab_duration', 0.0))
+    q_type_val = question.get("type", "mcq")
+    
     # Detect frustration using the 2-Layer AI engine if manual label is not provided
     detected_frustration = frustration_label
     if not detected_frustration:
@@ -570,7 +582,7 @@ def submit_answer():
         q_text_val = question.get("question_text") or question.get("text") or ""
         q_diff_val = question.get("difficulty", "easy")
         detected_frustration = verify_frustration_with_llm(
-            pred_frustration, is_correct, retry_count, time_taken, tab_switches, mouse_idle_time, typing_pauses, used_visual_toggle, q_text=q_text_val, q_diff=q_diff_val
+            pred_frustration, is_correct, retry_count, time_taken, tab_switches, mouse_idle_time, typing_pauses, used_visual_toggle, q_text=q_text_val, q_diff=q_diff_val, q_type=q_type_val, off_tab_duration=off_tab_duration
         )
         
     # Log the complete session records
