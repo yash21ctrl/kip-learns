@@ -174,61 +174,6 @@ def call_gemini_with_fallback(prompt, max_tokens=60, temp=0.7, timeout=2.5):
             continue
     return None
 
-def verify_frustration_with_llm(predicted_label, is_correct, retry_count, time_taken, tab_switches, mouse_idle_time, typing_pauses, used_visual_toggle, q_text="", q_diff="easy", q_type="mcq", off_tab_duration=0.0):
-    """
-    Layer 2: LLM Verification (Cognitive Auditor)
-    Cross-examines Layer 1 Decision Tree statistical predictions using Question-Type & Difficulty Matrix benchmarks.
-    """
-    if not GEMINI_API_KEY:
-        # Offline fallback: Trust Layer 1 Decision Tree prediction directly
-        return predicted_label
-        
-    q_len = len(str(q_text))
-    prompt = f"""
-    You are an AI Cognitive Auditor for an adaptive learning companion (CALM).
-    Cross-examine Layer 1's Decision Tree ML prediction against raw student telemetry using Question-Type & Difficulty Matrix benchmarks.
-    
-    Layer 1 ML Model Prediction: {predicted_label}
-    
-    Question Metadata:
-    - Question Type: {q_type} (MCQ, Short Typing, Full Typing, Match the Following)
-    - Difficulty: {q_diff} (easy, medium, hard)
-    - Text Length: {q_len} characters
-    
-    Raw Student Telemetry:
-    - Answer Status: {"CORRECT" if is_correct else "INCORRECT"}
-    - Attempts / Retries: {retry_count}
-    - Time Taken: {time_taken:.2f} seconds
-    - Off-Tab Focus Away Duration: {off_tab_duration:.1f} seconds
-    - Tab Switches: {tab_switches}
-    - Mouse Idle Time: {mouse_idle_time:.2f} seconds
-    - Typing Pauses: {typing_pauses}
-    - Used Visual Helper Scaffold: {used_visual_toggle}
-    
-    Question-Type & Difficulty Benchmarks:
-    1. Easy MCQ: Allowed thinking benchmark = 8.0s.
-    2. Medium MCQ: Allowed thinking benchmark = 20.0s.
-    3. Hard MCQ: Allowed thinking benchmark = 40.0s (Scratchpad paper math allowance).
-    4. Match the Following: Allowed thinking benchmark = 30.0s (Pair selection allowance).
-    5. Short / Full Typing: Allowed thinking benchmark = 45.0s (Composition allowance).
-    
-    Auditing Guidelines:
-    1. Correct Answer Flow: If Answer is CORRECT, ALWAYS verify as "Low" (Mastery).
-    2. Hard MCQ / Typing / Match Allowance: High time (up to benchmark) with 0 tab switches is productive deep thinking, NOT frustration. Override prediction to "Low" or "Medium".
-    3. Visual Scaffold Recovery: If student used the visual toggle helper (👁️) and got the answer correct, override High/Medium to "Low".
-    4. Impulsive Guessing (ADHD): If INCORRECT in < 2.0s with 0 prior retries on Easy MCQ, audit to "Medium" (Impulsive misclick), NOT High.
-    5. Genuine High Frustration: Confirm "High" ONLY IF student has 2+ retries on same question OR (idle > 15s AND off_tab_duration >= 15s).
-    6. Otherwise: Keep Layer 1 ML prediction ({predicted_label}).
-    
-    Output ONLY one word: "Low", "Medium", or "High".
-    """
-    res = call_gemini_with_fallback(prompt, max_tokens=5, temp=0.0, timeout=2.5)
-    if res:
-        clean_res = res.strip().strip('.').strip('"').strip("'")
-        if clean_res in ["Low", "Medium", "High"]:
-            return clean_res
-    return predicted_label
-
 def get_static_fallback_narration(frustration, sub_skill):
     """Fallback pre-written Kip messages matched to the student's sub-skill and frustration."""
     if frustration == "Low":
@@ -240,36 +185,54 @@ def get_static_fallback_narration(frustration, sub_skill):
     else:
         return random.choice(KIP_FALLBACK_REASONING["High"])
 
-def generate_kip_narration_live(frustration, is_correct, sub_skill, q_text=""):
+def audit_and_narrate_with_llm(predicted_label, is_correct, retry_count, time_taken, tab_switches, mouse_idle_time, typing_pauses, used_visual_toggle, q_text="", q_diff="easy", q_type="mcq", off_tab_duration=0.0, sub_skill="general"):
     """
-    Layer 3: Live Gemini AI Mascot Narration
-    Generates 1 short, warm, empathetic sentence directly to the student in Kip's voice.
+    Combined Layer 2 + Layer 3 Unified Single API Call.
+    Enforces a strict 1.5-second timeout.
+    If Gemini times out (> 1.5s) or fails, falls back INSTANTLY to pre-written offline fallback dictionary!
     """
+    fallback_narration = get_static_fallback_narration(predicted_label, sub_skill)
+    
     if not GEMINI_API_KEY:
-        return get_static_fallback_narration(frustration, sub_skill)
+        return predicted_label, fallback_narration
         
+    q_len = len(str(q_text))
     prompt = f"""
-    You are Kip, a super friendly, warm, empathetic AI companion for elementary and middle school students.
-    The student just submitted an answer to a question.
+    You are Kip, the AI Cognitive Auditor & Mascot for an adaptive learning platform (CALM).
+    Evaluate this student attempt and respond in JSON format ONLY.
     
-    Student State & Context:
+    Layer 1 ML Prediction: {predicted_label}
+    Question: {q_text} (Type: {q_type}, Difficulty: {q_diff}, Length: {q_len} chars)
+    
+    Student Telemetry:
     - Answer Status: {"CORRECT" if is_correct else "INCORRECT"}
-    - Detected Frustration State: {frustration}
-    - Topic / Sub-skill: {sub_skill}
-    - Question Text: {q_text}
+    - Attempts: {retry_count}, Time Taken: {time_taken:.1f}s, Off-Tab Away: {off_tab_duration:.1f}s, Tab Switches: {tab_switches}, Mouse Idle: {mouse_idle_time:.1f}s, Typing Pauses: {typing_pauses}, Used Visual Scaffold: {used_visual_toggle}
     
-    Instructions:
-    1. Write EXACTLY ONE short, encouraging, empathetic sentence (under 18 words) directly to the student ("you").
-    2. If CORRECT: Celebrate enthusiastically with positive reinforcement!
-    3. If INCORRECT & Low/Medium: Gently encourage them to try again or take another look without making them feel bad.
-    4. If INCORRECT & High: Warmly acknowledge that this topic is tricky and offer a gentle break or visual scaffold.
-    5. Do NOT use quotes or meta commentary. Output ONLY Kip's 1 spoken sentence.
+    Auditing Rules:
+    1. If CORRECT -> verified_frustration MUST be "Low".
+    2. If Hard MCQ/Typing/Match with 0 tab switches -> verify as "Low" or "Medium" (deep thinking).
+    3. If INCORRECT < 2.0s on Easy MCQ -> audit to "Medium" (Impulsive misclick).
+    4. If 2+ failed retries or (idle > 15s AND off_tab_duration >= 15s) -> confirm "High".
+    5. Otherwise -> keep Layer 1 ML prediction ({predicted_label}).
+    
+    Output JSON ONLY:
+    {{"label": "Low|Medium|High", "narration": "One short, warm, empathetic sentence (under 18 words) in Kip's voice directly to the student."}}
     """
-    res = call_gemini_with_fallback(prompt, max_tokens=30, temp=0.7, timeout=2.5)
-    if res and len(res) > 3:
-        return res.strip('"')
-        
-    return get_static_fallback_narration(frustration, sub_skill)
+    res = call_gemini_with_fallback(prompt, max_tokens=60, temp=0.5, timeout=1.5)
+    if res:
+        try:
+            import re
+            label_match = re.search(r'"label"\s*:\s*"(Low|Medium|High)"', res, re.IGNORECASE)
+            narration_match = re.search(r'"narration"\s*:\s*"([^"]+)"', res)
+            
+            verified_label = label_match.group(1).capitalize() if label_match else predicted_label
+            narration_text = narration_match.group(1).strip() if narration_match else fallback_narration
+            
+            return verified_label, narration_text
+        except Exception:
+            pass
+            
+    return predicted_label, fallback_narration
 
 def init_db_if_needed():
     global db_initialized, use_postgres
@@ -602,19 +565,21 @@ def submit_answer():
         
     off_tab_duration = float(data.get('off_tab_duration', 0.0))
     q_type_val = question.get("type", "mcq")
+    q_text_val = question.get("question_text") or question.get("text") or ""
+    q_diff_val = question.get("difficulty", "easy")
     
-    # Detect frustration using the 2-Layer AI engine if manual label is not provided
-    detected_frustration = frustration_label
-    if not detected_frustration:
-        # Layer 1: Decision Tree prediction
-        pred_frustration = predict_frustration_level(
-            retry_count, time_taken, tab_switches, mouse_idle_time, typing_pauses, used_visual_toggle
-        )
-        # Layer 2: LLM Verification (Cognitive Auditor)
-        q_text_val = question.get("question_text") or question.get("text") or ""
-        q_diff_val = question.get("difficulty", "easy")
-        detected_frustration = verify_frustration_with_llm(
-            pred_frustration, is_correct, retry_count, time_taken, tab_switches, mouse_idle_time, typing_pauses, used_visual_toggle, q_text=q_text_val, q_diff=q_diff_val, q_type=q_type_val, off_tab_duration=off_tab_duration
+    # 1. Layer 1: Decision Tree prediction
+    pred_frustration = predict_frustration_level(
+        retry_count, time_taken, tab_switches, mouse_idle_time, typing_pauses, used_visual_toggle
+    )
+    
+    # 2. Unified Layer 2 + Layer 3 Single API Call (Strict 1.5s Timeout)
+    if frustration_label:
+        detected_frustration = frustration_label
+        kip_narration = get_static_fallback_narration(detected_frustration, sub_skill_val)
+    else:
+        detected_frustration, kip_narration = audit_and_narrate_with_llm(
+            pred_frustration, is_correct, retry_count, time_taken, tab_switches, mouse_idle_time, typing_pauses, used_visual_toggle, q_text=q_text_val, q_diff=q_diff_val, q_type=q_type_val, off_tab_duration=off_tab_duration, sub_skill=sub_skill_val
         )
         
     # Log the complete session records
@@ -649,12 +614,6 @@ def submit_answer():
     reset_mission = None
     if trigger_reset_mission:
         reset_mission = random.choice(RESET_MISSIONS_POOL)
-    
-    # Layer 3: Live Gemini AI Mascot Narration
-    q_text_val = question.get("question_text") or question.get("text") or ""
-    kip_narration = generate_kip_narration_live(
-        detected_frustration, is_correct, sub_skill_val, q_text=q_text_val
-    )
     
     return jsonify({
         "correct": is_correct,
