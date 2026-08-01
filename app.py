@@ -132,40 +132,26 @@ KIP_FALLBACK_REASONING = {
 def predict_frustration_level(retry_count, time_taken, tab_switches, mouse_idle_time, typing_pauses, used_visual_toggle):
     """
     Layer 1: Frustration Prediction
-    Uses Decision Tree if loaded, with smart overrides for non-typing questions (like MCQs).
+    Pure Decision Tree classifier execution (frustration_model.joblib).
+    Returns the raw prediction output from the machine learning model.
     """
-    detected = "Low"
     if clf is not None:
         try:
             used_vt = 1 if used_visual_toggle else 0
             features = [[retry_count, time_taken, tab_switches, mouse_idle_time, typing_pauses, used_vt]]
             pred = clf.predict(features)[0]
             mapping = {0: "Low", 1: "Medium", 2: "High"}
-            detected = mapping.get(pred, "Low")
+            return mapping.get(pred, "Low")
         except Exception as e:
-            print(f"Error running model prediction: {e}. Using rule-based fallback.")
-            detected = "Low"
-    else:
-        # Static fallback mock model
-        if retry_count >= 2 or tab_switches >= 2:
-            detected = "High"
-        elif retry_count == 1 or mouse_idle_time > 4.0:
-            detected = "Medium"
-        else:
-            detected = "Low"
-
-    # ================= SMART OVERRIDES (For MCQ / zero-typing questions) =================
-    # If the user has multiple retries, it must be High frustration
-    if retry_count >= 2:
+            print(f"Error running model prediction: {e}. Using fallback prediction.")
+            
+    # Rule-based fallback if Decision Tree model is not loaded
+    if retry_count >= 2 or tab_switches >= 2:
         return "High"
-    # If they failed the question once, it's at least Medium
-    if retry_count == 1:
+    elif retry_count == 1 or mouse_idle_time > 4.0:
         return "Medium"
-    # If they are hesitating/idle for a long time, elevate to Medium
-    if mouse_idle_time > 6.0:
-        return "Medium"
-        
-    return detected
+    else:
+        return "Low"
 
 def call_gemini_with_fallback(prompt, max_tokens=60, temp=0.7, timeout=2.5):
     """Try multiple Gemini models dynamically to handle model deprecation and rate limits."""
@@ -188,41 +174,54 @@ def call_gemini_with_fallback(prompt, max_tokens=60, temp=0.7, timeout=2.5):
             continue
     return None
 
-def verify_frustration_with_llm(predicted_label, retry_count, time_taken, tab_switches, mouse_idle_time, typing_pauses, used_visual_toggle):
+def verify_frustration_with_llm(predicted_label, is_correct, retry_count, time_taken, tab_switches, mouse_idle_time, typing_pauses, used_visual_toggle):
     """
-    Layer 2: LLM Verification (Sanity Checker)
-    Double-checks classifier prediction against raw numbers using Gemini.
+    Layer 2: LLM Verification (Cognitive Auditor)
+    Audits Layer 1 Decision Tree prediction using Gemini LLM.
     """
+    # Rule 1: Fast or slow, if student got it CORRECT, frustration MUST be Low (mastery & confidence)!
+    if is_correct:
+        return "Low"
+        
     if not GEMINI_API_KEY:
+        # Offline audit rules
+        if retry_count >= 2:
+            return "High"
+        elif retry_count == 1:
+            return "Medium"
         return predicted_label
         
     prompt = f"""
-    You are a cognitive validation service for an adaptive learning companion app.
-    Verify if the predicted frustration level matches the evidence.
+    You are an AI Cognitive Auditor verifying a Decision Tree model's frustration prediction for a student.
     
-    Classifier Prediction: {predicted_label}
+    Layer 1 Decision Tree Model Prediction: {predicted_label}
     
-    Raw User Telemetry:
-    - Retries: {retry_count}
-    - Time taken on question: {time_taken:.2f} seconds
-    - Tab switches (distraction indicator): {tab_switches}
+    Student Performance Telemetry:
+    - Answer Result: {"CORRECT" if is_correct else "INCORRECT"}
+    - Attempts / Retries: {retry_count}
+    - Time taken: {time_taken:.2f} seconds
+    - Tab switches (distraction): {tab_switches}
     - Mouse idle time: {mouse_idle_time:.2f} seconds
-    - Long typing pauses: {typing_pauses}
-    - Used visual toggle helper: {used_visual_toggle}
+    - Typing pauses: {typing_pauses}
+    - Used visual helper: {used_visual_toggle}
     
-    Rules:
-    1. Single Attempt Failure (1st Wrong Click): If retries == 1, classify as "Medium" (shows Curious Kip & Skip button, but does NOT trigger Reset Takeover).
-    2. Multi-Attempt Struggle (2+ Wrong Clicks): If retries >= 2, classify as "High" (triggers Reset Takeover Modal).
-    3. Calculation Paralysis (Dyscalculia): If 0 retries, but mouse_idle_time > 8.0s or typing_pauses > 3, classify as "Medium".
-    4. Attention Drift (ADHD): If tab_switches >= 2 or time_taken > 25s with 0 retries, classify as "Medium".
-    5. Clean Performance: If retries == 0, normal time (< 15s), low idle, classify as "Low".
+    Audit Rules:
+    1. Correct Answer: If answer is CORRECT, frustration MUST be "Low" regardless of speed (fast correct answers mean mastery!).
+    2. 1st Wrong Click (retries == 1): Verify if label should be "Medium" (encourage student, show Skip button, do NOT trigger reset modal).
+    3. 2+ Wrong Clicks (retries >= 2): Verify if label should be "High" (trigger reset takeover modal).
+    4. Hesitation / Attention Drift: If 0 retries but mouse_idle_time > 8s or tab_switches >= 2, confirm "Medium".
     
-    Output ONLY one word: "Low", "Medium", or "High". Do not add any punctuation, markdown, or extra text.
+    Output ONLY one word: "Low", "Medium", or "High". Do not add any punctuation or extra text.
     """
     res = call_gemini_with_fallback(prompt, max_tokens=5, temp=0.0, timeout=2.0)
     if res in ["Low", "Medium", "High"]:
         return res
         
+    # Default audit fallback
+    if retry_count >= 2:
+        return "High"
+    elif retry_count == 1:
+        return "Medium"
     return predicted_label
 
 def get_static_fallback_narration(frustration, sub_skill):
@@ -572,9 +571,9 @@ def submit_answer():
         pred_frustration = predict_frustration_level(
             retry_count, time_taken, tab_switches, mouse_idle_time, typing_pauses, used_visual_toggle
         )
-        # Layer 2: LLM Verification (Sanity checker)
+        # Layer 2: LLM Verification (Cognitive Auditor)
         detected_frustration = verify_frustration_with_llm(
-            pred_frustration, retry_count, time_taken, tab_switches, mouse_idle_time, typing_pauses, used_visual_toggle
+            pred_frustration, is_correct, retry_count, time_taken, tab_switches, mouse_idle_time, typing_pauses, used_visual_toggle
         )
         
     # Log the complete session records
