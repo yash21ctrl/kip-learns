@@ -190,10 +190,11 @@ def verify_frustration_with_llm(predicted_label, retry_count, time_taken, tab_sw
     - Used visual toggle helper: {used_visual_toggle}
     
     Rules:
-    - If the user had 0 or 1 retries, and normal time taken (less than 20 seconds), and low idle/pauses, the frustration MUST be Low.
-    - If the user has 3+ retries, or very high idle time (>15 seconds), they are struggling (frustration is Medium or High).
-    - If the classifier predicted High but the user got the question right on the first try with no struggle, correct it to Low.
-    - ADHD/Impulsivity Rule: If the user gets a question wrong and the time taken is extremely short (under 2.5 seconds), they are guessing impulsively without reading. Classify this as "Medium" or "High" distraction/frustration to trigger a reset or alert, as this indicates ADHD inattention.
+    1. Impulsive Guessing / Rage Click (ADHD): If wrong and time_taken < 2.5s, classify as "High" (indicates impulsive guessing without reading).
+    2. Calculation Paralysis (Dyscalculia): If 0 retries, but mouse_idle_time > 8.0s or typing_pauses > 3, classify as "Medium" (indicates working memory overload on math).
+    3. Attention Drift (ADHD): If tab_switches >= 2 or time_taken > 25s with 0 retries, classify as "Medium" (indicates off-task distraction).
+    4. Multi-Attempt Struggle: If retries >= 2, classify as "High" (triggers reset mission takeover).
+    5. Clean Performance: If retries <= 1, normal time (< 15s), low idle, classify as "Low".
     
     Output ONLY one word: "Low", "Medium", or "High". Do not add any punctuation, markdown, or extra text.
     """
