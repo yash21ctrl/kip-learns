@@ -177,57 +177,46 @@ def call_gemini_with_fallback(prompt, max_tokens=60, temp=0.7, timeout=2.5):
 def verify_frustration_with_llm(predicted_label, is_correct, retry_count, time_taken, tab_switches, mouse_idle_time, typing_pauses, used_visual_toggle, q_text="", q_diff="easy"):
     """
     Layer 2: LLM Verification (Cognitive Auditor)
-    Audits Layer 1 Decision Tree prediction using Gemini LLM.
+    Acts as a genuine AI auditor cross-examining Layer 1 Decision Tree predictions.
+    Catches cognitive edge cases where statistical ML models misread human intent.
     """
-    # Rule 1: Fast or slow, if student got it CORRECT, frustration MUST be Low (mastery & confidence)!
-    if is_correct:
-        return "Low"
-        
     if not GEMINI_API_KEY:
-        # Offline audit rules
-        if retry_count >= 2:
-            return "High"
-        elif retry_count == 1:
-            return "Medium"
+        # Offline fallback: Trust Layer 1 Decision Tree prediction directly
         return predicted_label
         
     q_len = len(str(q_text))
     prompt = f"""
-    You are an AI Cognitive Auditor verifying a Decision Tree model's frustration prediction for a student.
+    You are an AI Cognitive Auditor for an adaptive learning companion (CALM).
+    Your job is to cross-examine Layer 1's Decision Tree prediction against raw student telemetry and detect if the ML model made a mistake.
     
-    Layer 1 Decision Tree Model Prediction: {predicted_label}
+    Layer 1 Decision Tree Prediction: {predicted_label}
     
-    Context:
-    - Question Difficulty: {q_diff}
+    Question Context:
+    - Difficulty: {q_diff}
     - Question Text Length: {q_len} characters
     
-    Student Performance Telemetry:
-    - Answer Result: {"CORRECT" if is_correct else "INCORRECT"}
+    Raw Telemetry Evidence:
+    - Answer Status: {"CORRECT" if is_correct else "INCORRECT"}
     - Attempts / Retries: {retry_count}
-    - Time taken: {time_taken:.2f} seconds
-    - Tab switches (distraction): {tab_switches}
-    - Mouse idle time: {mouse_idle_time:.2f} seconds
-    - Typing pauses: {typing_pauses}
-    - Used visual helper: {used_visual_toggle}
+    - Time Taken: {time_taken:.2f} seconds
+    - Tab Switches (Off-task distraction): {tab_switches}
+    - Mouse Idle Time (Hesitation/Stalling): {mouse_idle_time:.2f} seconds
+    - Typing Pauses (Calculation blockage): {typing_pauses}
+    - Used Visual Helper Scaffold: {used_visual_toggle}
     
-    Audit Rules:
-    1. Correct Answer: If answer is CORRECT, frustration MUST be "Low" regardless of speed (fast correct answers mean mastery!).
-    2. Long Question Reading: If Question Text Length is large (>100 characters), mouse_idle_time up to 20 seconds is NORMAL reading time (do NOT flag as frustration or distraction!).
-    3. 1st Wrong Click (retries == 1): Verify if label should be "Medium" (encourage student, show Skip button, do NOT trigger reset modal).
-    4. 2+ Wrong Clicks (retries >= 2): Verify if label should be "High" (trigger reset takeover modal).
-    5. Hesitation / Attention Drift: On short questions (<50 chars), if 0 retries but mouse_idle_time > 8s or tab_switches >= 2, confirm "Medium".
+    Auditing Guidelines (Evaluate human intent vs ML prediction):
+    1. Correct Answers with High Idle: If Answer is CORRECT, high time/idle on a long question (>100 chars) indicates thoughtful reading and problem-solving, NOT frustration. Override prediction to "Low".
+    2. Visual Scaffold Recovery: If student used the visual toggle helper and got the answer correct, override High/Medium to "Low" (the tool resolved their cognitive block).
+    3. Impulsive Guessing: If INCORRECT in < 2.0s with 0 prior retries, override to "Medium" (distraction/impulsivity).
+    4. Genuine High Frustration: Confirm "High" if student has 2+ retries OR combination of high idle (>10s) and tab switches (>1).
+    5. Otherwise: If Layer 1 prediction makes logical sense given the telemetry, KEEP Layer 1's prediction ({predicted_label}).
     
-    Output ONLY one word: "Low", "Medium", or "High". Do not add any punctuation or extra text.
+    Output ONLY one word: "Low", "Medium", or "High".
     """
-    res = call_gemini_with_fallback(prompt, max_tokens=5, temp=0.0, timeout=2.0)
+    res = call_gemini_with_fallback(prompt, max_tokens=5, temp=0.0, timeout=2.5)
     if res in ["Low", "Medium", "High"]:
         return res
         
-    # Default audit fallback
-    if retry_count >= 2:
-        return "High"
-    elif retry_count == 1:
-        return "Medium"
     return predicted_label
 
 def get_static_fallback_narration(frustration, sub_skill):
