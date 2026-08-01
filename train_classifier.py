@@ -62,8 +62,9 @@ def main():
     # Split 70/30 train/test split
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42)
 
-    # Train DecisionTreeClassifier(max_depth=3)
-    clf = DecisionTreeClassifier(max_depth=3, random_state=42)
+    # Train DecisionTreeClassifier(max_depth=3, class_weight='balanced', random_state=42)
+    # class_weight='balanced' ensures all 3 classes (Low, Medium, High) have active representation
+    clf = DecisionTreeClassifier(max_depth=3, class_weight='balanced', random_state=42)
     clf.fit(X_train, y_train)
 
     # Test Accuracy Evaluation

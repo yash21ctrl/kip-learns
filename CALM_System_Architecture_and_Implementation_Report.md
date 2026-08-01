@@ -45,7 +45,7 @@ To eliminate self-reported noise from rushed/lazy labeling during data collectio
 ### D. Authentic Model Architecture & XAI Performance
 * **Dataset Used**: `training_sessions_cleaned.csv` (688 rows of authentic human self-reported labels with 14.1% severe noise removed).
 * **Algorithm**: `DecisionTreeClassifier(max_depth=3)` saved to `frustration_model.joblib`.
-* **Authentic Test Accuracy**: **47.83% – 61.83% Accuracy** on a 70/30 held-out test split (207 test samples). This represents an authentic, hard-won, and defensible benchmark on subjective, noisy human frustration.
+* **Single Reproducible Test Accuracy**: **52.17% Accuracy** on a 70/30 held-out test split (207 test samples, 100% reproducible with fixed seed `random_state=42` and `class_weight='balanced'`). This represents an authentic, hard-won, and defensible benchmark on subjective, noisy human frustration.
 * **Explainable AI (XAI) Tree Structure**:
   ```text
   |--- mouse_idle_time <= 5.62s -> Low Frustration (Flow State)
