@@ -193,6 +193,7 @@ def verify_frustration_with_llm(predicted_label, retry_count, time_taken, tab_sw
     - If the user had 0 or 1 retries, and normal time taken (less than 20 seconds), and low idle/pauses, the frustration MUST be Low.
     - If the user has 3+ retries, or very high idle time (>15 seconds), they are struggling (frustration is Medium or High).
     - If the classifier predicted High but the user got the question right on the first try with no struggle, correct it to Low.
+    - ADHD/Impulsivity Rule: If the user gets a question wrong and the time taken is extremely short (under 2.5 seconds), they are guessing impulsively without reading. Classify this as "Medium" or "High" distraction/frustration to trigger a reset or alert, as this indicates ADHD inattention.
     
     Output ONLY one word: "Low", "Medium", or "High". Do not add any punctuation, markdown, or extra text.
     """
