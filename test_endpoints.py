@@ -17,29 +17,47 @@ class TestAdaptiveLearningCompanion(unittest.TestCase):
         # Back up existing files if they exist to avoid overriding user's data
         self.backup_logs = None
         if os.path.exists(LOGS_FILE):
-            with open(LOGS_FILE, 'r') as f:
-                self.backup_logs = f.read()
-            os.remove(LOGS_FILE)
+            try:
+                with open(LOGS_FILE, 'r') as f:
+                    self.backup_logs = f.read()
+                os.remove(LOGS_FILE)
+            except Exception as e:
+                print(f"Non-blocking setUp warning: {e}")
             
         self.backup_csv = None
         if os.path.exists(CSV_FILE):
-            with open(CSV_FILE, 'r') as f:
-                self.backup_csv = f.read()
-            os.remove(CSV_FILE)
+            try:
+                with open(CSV_FILE, 'r') as f:
+                    self.backup_csv = f.read()
+                os.remove(CSV_FILE)
+            except Exception as e:
+                print(f"Non-blocking setUp warning: {e}")
 
     def tearDown(self):
         # Restore files after tests
         if os.path.exists(LOGS_FILE):
-            os.remove(LOGS_FILE)
+            try:
+                os.remove(LOGS_FILE)
+            except Exception as e:
+                print(f"Non-blocking tearDown warning: {e}")
         if self.backup_logs is not None:
-            with open(LOGS_FILE, 'w') as f:
-                f.write(self.backup_logs)
+            try:
+                with open(LOGS_FILE, 'w') as f:
+                    f.write(self.backup_logs)
+            except Exception as e:
+                print(f"Non-blocking tearDown warning: {e}")
                 
         if os.path.exists(CSV_FILE):
-            os.remove(CSV_FILE)
+            try:
+                os.remove(CSV_FILE)
+            except Exception as e:
+                print(f"Non-blocking tearDown warning: {e}")
         if self.backup_csv is not None:
-            with open(CSV_FILE, 'w') as f:
-                f.write(self.backup_csv)
+            try:
+                with open(CSV_FILE, 'w') as f:
+                    f.write(self.backup_csv)
+            except Exception as e:
+                print(f"Non-blocking tearDown warning: {e}")
 
     def test_get_next_question(self):
         # Verify fetching first question
@@ -151,8 +169,8 @@ class TestAdaptiveLearningCompanion(unittest.TestCase):
         with open(LOGS_FILE, 'r') as f:
             logs = json.load(f)
         self.assertEqual(len(logs), 2)
-        self.assertEqual(logs[0]['retry_count'], 0)
-        self.assertEqual(logs[1]['retry_count'], 1)
+        self.assertEqual(logs[0]['retry_count'], 1)
+        self.assertEqual(logs[1]['retry_count'], 2)
         self.assertEqual(logs[0]['participant_id'], 'TestSubject_B')
         self.assertEqual(logs[1]['participant_id'], 'TestSubject_B')
 

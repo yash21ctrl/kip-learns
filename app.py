@@ -551,7 +551,8 @@ def submit_answer():
     retry_count = session["retry_counts"].get(q_id_str, 0)
     
     if not is_correct:
-        session["retry_counts"][q_id_str] = retry_count + 1
+        retry_count = retry_count + 1
+        session["retry_counts"][q_id_str] = retry_count
         
     # Detect frustration using the 2-Layer AI engine if manual label is not provided
     detected_frustration = frustration_label
