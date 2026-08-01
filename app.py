@@ -211,11 +211,11 @@ def verify_frustration_with_llm(predicted_label, retry_count, time_taken, tab_sw
     - Used visual toggle helper: {used_visual_toggle}
     
     Rules:
-    1. Impulsive Guessing / Rage Click (ADHD): If wrong and time_taken < 2.5s, classify as "High" (indicates impulsive guessing without reading).
-    2. Calculation Paralysis (Dyscalculia): If 0 retries, but mouse_idle_time > 8.0s or typing_pauses > 3, classify as "Medium" (indicates working memory overload on math).
-    3. Attention Drift (ADHD): If tab_switches >= 2 or time_taken > 25s with 0 retries, classify as "Medium" (indicates off-task distraction).
-    4. Multi-Attempt Struggle: If retries >= 2, classify as "High" (triggers reset mission takeover).
-    5. Clean Performance: If retries <= 1, normal time (< 15s), low idle, classify as "Low".
+    1. Single Attempt Failure (1st Wrong Click): If retries == 1, classify as "Medium" (shows Curious Kip & Skip button, but does NOT trigger Reset Takeover).
+    2. Multi-Attempt Struggle (2+ Wrong Clicks): If retries >= 2, classify as "High" (triggers Reset Takeover Modal).
+    3. Calculation Paralysis (Dyscalculia): If 0 retries, but mouse_idle_time > 8.0s or typing_pauses > 3, classify as "Medium".
+    4. Attention Drift (ADHD): If tab_switches >= 2 or time_taken > 25s with 0 retries, classify as "Medium".
+    5. Clean Performance: If retries == 0, normal time (< 15s), low idle, classify as "Low".
     
     Output ONLY one word: "Low", "Medium", or "High". Do not add any punctuation, markdown, or extra text.
     """
