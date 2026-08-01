@@ -223,9 +223,10 @@ def verify_frustration_with_llm(predicted_label, is_correct, retry_count, time_t
     Output ONLY one word: "Low", "Medium", or "High".
     """
     res = call_gemini_with_fallback(prompt, max_tokens=5, temp=0.0, timeout=2.5)
-    if res in ["Low", "Medium", "High"]:
-        return res
-        
+    if res:
+        clean_res = res.strip().strip('.').strip('"').strip("'")
+        if clean_res in ["Low", "Medium", "High"]:
+            return clean_res
     return predicted_label
 
 def get_static_fallback_narration(frustration, sub_skill):
@@ -238,6 +239,37 @@ def get_static_fallback_narration(frustration, sub_skill):
         return random.choice(KIP_FALLBACK_REASONING["Medium"])
     else:
         return random.choice(KIP_FALLBACK_REASONING["High"])
+
+def generate_kip_narration_live(frustration, is_correct, sub_skill, q_text=""):
+    """
+    Layer 3: Live Gemini AI Mascot Narration
+    Generates 1 short, warm, empathetic sentence directly to the student in Kip's voice.
+    """
+    if not GEMINI_API_KEY:
+        return get_static_fallback_narration(frustration, sub_skill)
+        
+    prompt = f"""
+    You are Kip, a super friendly, warm, empathetic AI companion for elementary and middle school students.
+    The student just submitted an answer to a question.
+    
+    Student State & Context:
+    - Answer Status: {"CORRECT" if is_correct else "INCORRECT"}
+    - Detected Frustration State: {frustration}
+    - Topic / Sub-skill: {sub_skill}
+    - Question Text: {q_text}
+    
+    Instructions:
+    1. Write EXACTLY ONE short, encouraging, empathetic sentence (under 18 words) directly to the student ("you").
+    2. If CORRECT: Celebrate enthusiastically with positive reinforcement!
+    3. If INCORRECT & Low/Medium: Gently encourage them to try again or take another look without making them feel bad.
+    4. If INCORRECT & High: Warmly acknowledge that this topic is tricky and offer a gentle break or visual scaffold.
+    5. Do NOT use quotes or meta commentary. Output ONLY Kip's 1 spoken sentence.
+    """
+    res = call_gemini_with_fallback(prompt, max_tokens=30, temp=0.7, timeout=2.5)
+    if res and len(res) > 3:
+        return res.strip('"')
+        
+    return get_static_fallback_narration(frustration, sub_skill)
 
 def init_db_if_needed():
     global db_initialized, use_postgres
@@ -618,11 +650,18 @@ def submit_answer():
     if trigger_reset_mission:
         reset_mission = random.choice(RESET_MISSIONS_POOL)
     
+    # Layer 3: Live Gemini AI Mascot Narration
+    q_text_val = question.get("question_text") or question.get("text") or ""
+    kip_narration = generate_kip_narration_live(
+        detected_frustration, is_correct, sub_skill_val, q_text=q_text_val
+    )
+    
     return jsonify({
         "correct": is_correct,
         "correct_answer": correct_ans_val,
         "retry_count_after": session["retry_counts"].get(q_id_str, 0),
         "frustration_level": detected_frustration,
+        "kip_narration": kip_narration,
         "trigger_reset_mission": trigger_reset_mission,
         "reset_mission": reset_mission
     })
