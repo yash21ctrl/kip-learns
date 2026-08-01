@@ -174,7 +174,7 @@ def call_gemini_with_fallback(prompt, max_tokens=60, temp=0.7, timeout=2.5):
             continue
     return None
 
-def verify_frustration_with_llm(predicted_label, is_correct, retry_count, time_taken, tab_switches, mouse_idle_time, typing_pauses, used_visual_toggle):
+def verify_frustration_with_llm(predicted_label, is_correct, retry_count, time_taken, tab_switches, mouse_idle_time, typing_pauses, used_visual_toggle, q_text="", q_diff="easy"):
     """
     Layer 2: LLM Verification (Cognitive Auditor)
     Audits Layer 1 Decision Tree prediction using Gemini LLM.
@@ -191,10 +191,15 @@ def verify_frustration_with_llm(predicted_label, is_correct, retry_count, time_t
             return "Medium"
         return predicted_label
         
+    q_len = len(str(q_text))
     prompt = f"""
     You are an AI Cognitive Auditor verifying a Decision Tree model's frustration prediction for a student.
     
     Layer 1 Decision Tree Model Prediction: {predicted_label}
+    
+    Context:
+    - Question Difficulty: {q_diff}
+    - Question Text Length: {q_len} characters
     
     Student Performance Telemetry:
     - Answer Result: {"CORRECT" if is_correct else "INCORRECT"}
@@ -207,9 +212,10 @@ def verify_frustration_with_llm(predicted_label, is_correct, retry_count, time_t
     
     Audit Rules:
     1. Correct Answer: If answer is CORRECT, frustration MUST be "Low" regardless of speed (fast correct answers mean mastery!).
-    2. 1st Wrong Click (retries == 1): Verify if label should be "Medium" (encourage student, show Skip button, do NOT trigger reset modal).
-    3. 2+ Wrong Clicks (retries >= 2): Verify if label should be "High" (trigger reset takeover modal).
-    4. Hesitation / Attention Drift: If 0 retries but mouse_idle_time > 8s or tab_switches >= 2, confirm "Medium".
+    2. Long Question Reading: If Question Text Length is large (>100 characters), mouse_idle_time up to 20 seconds is NORMAL reading time (do NOT flag as frustration or distraction!).
+    3. 1st Wrong Click (retries == 1): Verify if label should be "Medium" (encourage student, show Skip button, do NOT trigger reset modal).
+    4. 2+ Wrong Clicks (retries >= 2): Verify if label should be "High" (trigger reset takeover modal).
+    5. Hesitation / Attention Drift: On short questions (<50 chars), if 0 retries but mouse_idle_time > 8s or tab_switches >= 2, confirm "Medium".
     
     Output ONLY one word: "Low", "Medium", or "High". Do not add any punctuation or extra text.
     """
@@ -572,8 +578,10 @@ def submit_answer():
             retry_count, time_taken, tab_switches, mouse_idle_time, typing_pauses, used_visual_toggle
         )
         # Layer 2: LLM Verification (Cognitive Auditor)
+        q_text_val = question.get("question_text") or question.get("text") or ""
+        q_diff_val = question.get("difficulty", "easy")
         detected_frustration = verify_frustration_with_llm(
-            pred_frustration, is_correct, retry_count, time_taken, tab_switches, mouse_idle_time, typing_pauses, used_visual_toggle
+            pred_frustration, is_correct, retry_count, time_taken, tab_switches, mouse_idle_time, typing_pauses, used_visual_toggle, q_text=q_text_val, q_diff=q_diff_val
         )
         
     # Log the complete session records
