@@ -281,32 +281,34 @@ def perform_backend_cognitive_audit(predicted_label, is_correct, retry_count, ti
 
 def audit_and_narrate_with_llm(predicted_label, is_correct, retry_count, time_taken, tab_switches, mouse_idle_time, typing_pauses, used_visual_toggle, q_text="", q_diff="easy", q_type="mcq", off_tab_duration=0.0, sub_skill="general"):
     """
-    ARCHITECTURE:
-    - Layer 1: ML Telemetry Model (Decision Tree prediction)
-    - Layer 2: Live LLM Cognitive Auditor (OpenRouter / Gemini API verifies frustration)
-    - Layer 3: Pure Backend Persona Engine (Curated Kip Speech & UI Interventions)
+    UNIFIED SINGLE CALL ARCHITECTURE (Layer 2 & Layer 3 Combined):
+    - 1 Single LLM API call with strict 2.5s timeout.
+    - Returns verified frustration label (Layer 2 Audit) + empathetic mascot speech (Layer 3 Narration).
+    - If API times out or fails, falls back INSTANTLY to pure backend rule auditor and persona dictionary in < 1ms!
     """
     openrouter_key = os.environ.get("OPENROUTER_API_KEY")
     openai_key = os.environ.get("OPENAI_API_KEY")
     gemini_key = os.environ.get("GEMINI_API_KEY")
     
-    # Default Rule-Based Cognitive Audit if LLM API is unavailable
+    # Default Rule-Based Fallbacks
     rule_verified_label = perform_backend_cognitive_audit(
         predicted_label, is_correct, retry_count, time_taken, tab_switches, mouse_idle_time, typing_pauses, used_visual_toggle, q_diff=q_diff, q_type=q_type, off_tab_duration=off_tab_duration
     )
+    fallback_narration = get_static_fallback_narration(rule_verified_label, sub_skill)
+    
     verified_label = rule_verified_label
-    ai_source_badge = "Backend Matrix Rule Auditor"
+    kip_narration = fallback_narration
+    ai_source_badge = "Backend Persona Engine (Layer 2 & 3 Active)"
 
-    # Layer 2: Live LLM Cognitive Auditor
+    # Unified Layer 2 + 3 Single LLM Call (Strict 2.5s Timeout)
     if openrouter_key or openai_key or gemini_key:
         q_len = len(str(q_text))
         prompt = f"""
-        You are the Layer 2 Cognitive Auditor for an adaptive learning platform (CALM).
-        Your job is to audit the raw Layer 1 ML prediction ({predicted_label}) and determine the student's true cognitive frustration level.
+        You are Kip, the AI Cognitive Auditor & Mascot for an adaptive learning platform (CALM).
+        Evaluate this student attempt and respond in JSON format ONLY.
         
-        Question Context:
-        - Text: {q_text}
-        - Type: {q_type}, Difficulty: {q_diff}, Length: {q_len} chars
+        Layer 1 ML Prediction: {predicted_label}
+        Question: {q_text} (Type: {q_type}, Difficulty: {q_diff}, Length: {q_len} chars)
         
         Student Telemetry:
         - Answer Status: {"CORRECT" if is_correct else "INCORRECT"}
@@ -320,9 +322,9 @@ def audit_and_narrate_with_llm(predicted_label, is_correct, retry_count, time_ta
         5. Otherwise -> keep prediction ({predicted_label}).
         
         Output JSON ONLY:
-        {{"label": "Low|Medium|High", "audit_reasoning": "Short technical justification."}}
+        {{"label": "Low|Medium|High", "narration": "One short, warm, empathetic sentence (under 18 words) in Kip's voice directly to the student."}}
         """
-        res = call_llm_with_fallback(prompt, max_tokens=60, temp=0.5, timeout=5.0)
+        res = call_llm_with_fallback(prompt, max_tokens=60, temp=0.5, timeout=2.5)
         if res:
             try:
                 import re
@@ -333,27 +335,27 @@ def audit_and_narrate_with_llm(predicted_label, is_correct, retry_count, time_ta
                     
                 data = json.loads(clean_res)
                 v_label = str(data.get("label", rule_verified_label)).strip().capitalize()
+                v_narration = str(data.get("narration", fallback_narration)).strip()
                 
                 if v_label in ["Low", "Medium", "High"]:
                     verified_label = v_label
-                    ai_source_badge = "Layer 2 LLM Auditor Active (OpenRouter)"
-                    print(f"[LAYER 2 LLM AUDITOR SUCCESS]: Layer 1={predicted_label} -> Layer 2 LLM Verified={verified_label}")
+                    kip_narration = v_narration
+                    ai_source_badge = "OpenRouter AI (Layer 2 & 3 Active)"
+                    print(f"[UNIFIED LLM CALL SUCCESS]: Verified={verified_label} | Narration='{kip_narration}'")
             except Exception as e:
-                print(f"[LAYER 2 AUDIT NOTICE]: {e} | Using Rule Auditor fallback: {rule_verified_label}")
+                print(f"[LLM PARSE NOTICE]: {e} | Using Backend Fallback: {rule_verified_label}")
 
-    # Layer 3: Pure Backend Persona Engine (Empathetic Speech & UI Interventions)
-    kip_narration = get_static_fallback_narration(verified_label, sub_skill)
     return verified_label, kip_narration, ai_source_badge
 
 def init_db_if_needed():
     global db_initialized, use_postgres
     if db_initialized:
         return
-    if DATABASE_URL:
+        
+    db_url = os.environ.get("DATABASE_URL")
+    if db_url and psycopg2:
         try:
-            import psycopg2
-            # Set a 3-second connection timeout to prevent hanging on startup
-            conn = psycopg2.connect(DATABASE_URL, connect_timeout=3)
+            conn = psycopg2.connect(db_url, connect_timeout=3)
             with conn.cursor() as cur:
                 cur.execute("""
                     CREATE TABLE IF NOT EXISTS session_logs (
@@ -381,9 +383,9 @@ def init_db_if_needed():
                 conn.commit()
             conn.close()
             use_postgres = True
-            print("Connected to PostgreSQL successfully.")
+            print("Connected to Render PostgreSQL database successfully.")
         except Exception as e:
-            print(f"PostgreSQL connection failed: {e}. Falling back to local JSON files.")
+            print(f"PostgreSQL connection failed ({e}). Falling back to local JSON logs.")
             use_postgres = False
     db_initialized = True
 
@@ -780,14 +782,15 @@ def retrain_model_endpoint():
                     "target": mapping[lbl]
                 })
 
-        if len(rows) < 3:
+        if len(rows) < 10:
             return jsonify({
                 "success": False,
-                "message": f"Need at least 3 labeled session attempts to retrain the ML model. Currently have {len(rows)}.",
+                "message": f"Need at least 10 labeled session attempts for a 70/30 train/test split. Currently have {len(rows)}.",
                 "samples_count": len(rows)
             }), 400
 
         from sklearn.tree import DecisionTreeClassifier
+        from sklearn.model_selection import train_test_split
         import joblib
 
         X = [
@@ -798,22 +801,25 @@ def retrain_model_endpoint():
 
         feature_names = ['retry_count', 'time_taken', 'tab_switches', 'mouse_idle_time', 'typing_pauses', 'used_visual_toggle']
 
-        new_clf = DecisionTreeClassifier(max_depth=4, random_state=42)
-        new_clf.fit(X, y)
+        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42)
+
+        new_clf = DecisionTreeClassifier(max_depth=3, random_state=42)
+        new_clf.fit(X_train, y_train)
 
         joblib.dump(new_clf, MODEL_FILE)
         global clf
         clf = new_clf
 
         feature_importances = dict(zip(feature_names, [round(float(val), 3) for val in new_clf.feature_importances_]))
-        accuracy = round(float(new_clf.score(X, y)) * 100, 1)
+        test_accuracy = round(float(new_clf.score(X_test, y_test)) * 100, 1)
 
-        print(f"[ML RETRAINING SUCCESS]: Trained on {len(rows)} samples | Accuracy: {accuracy}%")
+        print(f"[ML RETRAINING SUCCESS]: Trained on {len(X_train)} samples | Tested on {len(X_test)} samples | Held-Out Test Accuracy: {test_accuracy}%")
         return jsonify({
             "success": True,
-            "message": f"ML Classifier successfully retrained on {len(rows)} real student telemetry records!",
-            "training_samples": len(rows),
-            "training_accuracy": f"{accuracy}%",
+            "message": f"ML Classifier successfully retrained with 70/30 train/test split on {len(rows)} real student records!",
+            "training_samples": len(X_train),
+            "test_samples": len(X_test),
+            "held_out_test_accuracy": f"{test_accuracy}%",
             "feature_importances": feature_importances
         })
 
