@@ -879,15 +879,18 @@ def get_kip_reasoning():
     retry_count = latest_record.get("retry_count", 0)
     time_taken = latest_record.get("time_taken", 0.0)
     
-    # Check if Gemini key is present
-    if not GEMINI_API_KEY:
+    openrouter_key = os.environ.get("OPENROUTER_API_KEY")
+    openai_key = os.environ.get("OPENAI_API_KEY")
+    gemini_key = os.environ.get("GEMINI_API_KEY")
+    
+    if not openrouter_key and not openai_key and not gemini_key:
         reasoning = get_static_fallback_narration(verified_frustration, sub_skill)
         return jsonify({
             "frustration_level": verified_frustration,
             "reasoning": reasoning
         })
         
-    # Query Gemini for Kip's narration
+    # Query LLM for Kip's narration
     prompt = f"""
     You are Kip, a friendly, supportive AI learning buddy mascot on a student's screen.
     Analyze the student's latest question performance and explain your thoughts in a warm, encouraging, conversational tone.
@@ -905,7 +908,7 @@ def get_kip_reasoning():
     - Do not mention technical terms like "classifier", "telemetry", "model", or "verification".
     """
     
-    res = call_gemini_with_fallback(prompt, max_tokens=60, temp=0.7, timeout=2.5)
+    res = call_llm_with_fallback(prompt, max_tokens=60, temp=0.7, timeout=5.0)
     if res:
         return jsonify({
             "frustration_level": verified_frustration,

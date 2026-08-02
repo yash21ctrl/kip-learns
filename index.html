@@ -592,6 +592,8 @@
       lastMouseActionTime = Date.now();
     }
 
+    const API_BASE = (window.location.protocol === 'file:' || !window.location.port) ? 'http://127.0.0.1:5000' : '';
+
     function startSession() {
       const inputVal = document.getElementById("participantIdInput").value.trim();
       if (!inputVal) {
@@ -615,7 +617,7 @@
       optionsContainer.innerHTML = "";
       
       try {
-        const response = await fetch(`/get-next-question?participant_id=${encodeURIComponent(participantId)}`);
+        const response = await fetch(`${API_BASE}/get-next-question?participant_id=${encodeURIComponent(participantId)}`);
         const data = await response.json();
         
         if (data.finished) {
@@ -692,7 +694,7 @@
       };
       
       try {
-        const response = await fetch('/submit-answer', {
+        const response = await fetch(`${API_BASE}/submit-answer`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload)
