@@ -281,69 +281,69 @@ def perform_backend_cognitive_audit(predicted_label, is_correct, retry_count, ti
 
 def audit_and_narrate_with_llm(predicted_label, is_correct, retry_count, time_taken, tab_switches, mouse_idle_time, typing_pauses, used_visual_toggle, q_text="", q_diff="easy", q_type="mcq", off_tab_duration=0.0, sub_skill="general"):
     """
-    Combined Layer 2 + Layer 3 Engine.
-    Tries OpenRouter/LLM API first; falls back to pure Backend Cognitive Auditor & Kip Persona Matrix in < 1ms.
+    ARCHITECTURE:
+    - Layer 1: ML Telemetry Model (Decision Tree prediction)
+    - Layer 2: Live LLM Cognitive Auditor (OpenRouter / Gemini API verifies frustration)
+    - Layer 3: Pure Backend Persona Engine (Curated Kip Speech & UI Interventions)
     """
-    verified_label = perform_backend_cognitive_audit(
-        predicted_label, is_correct, retry_count, time_taken, tab_switches, mouse_idle_time, typing_pauses, used_visual_toggle, q_diff=q_diff, q_type=q_type, off_tab_duration=off_tab_duration
-    )
-    fallback_narration = get_static_fallback_narration(verified_label, sub_skill)
-    
     openrouter_key = os.environ.get("OPENROUTER_API_KEY")
     openai_key = os.environ.get("OPENAI_API_KEY")
     gemini_key = os.environ.get("GEMINI_API_KEY")
     
-    if not openrouter_key and not openai_key and not gemini_key:
-        return verified_label, fallback_narration, "Backend Persona Engine (Layer 2 & 3 Active)"
+    # Default Rule-Based Cognitive Audit if LLM API is unavailable
+    rule_verified_label = perform_backend_cognitive_audit(
+        predicted_label, is_correct, retry_count, time_taken, tab_switches, mouse_idle_time, typing_pauses, used_visual_toggle, q_diff=q_diff, q_type=q_type, off_tab_duration=off_tab_duration
+    )
+    verified_label = rule_verified_label
+    ai_source_badge = "Backend Matrix Rule Auditor"
+
+    # Layer 2: Live LLM Cognitive Auditor
+    if openrouter_key or openai_key or gemini_key:
+        q_len = len(str(q_text))
+        prompt = f"""
+        You are the Layer 2 Cognitive Auditor for an adaptive learning platform (CALM).
+        Your job is to audit the raw Layer 1 ML prediction ({predicted_label}) and determine the student's true cognitive frustration level.
         
-    q_len = len(str(q_text))
-    prompt = f"""
-    You are Kip, the AI Cognitive Auditor & Mascot for an adaptive learning platform (CALM).
-    Evaluate this student attempt and respond in JSON format ONLY.
-    
-    Layer 1 ML Prediction: {predicted_label}
-    Verified Label: {verified_label}
-    Question: {q_text} (Type: {q_type}, Difficulty: {q_diff}, Length: {q_len} chars)
-    
-    Student Telemetry:
-    - Answer Status: {"CORRECT" if is_correct else "INCORRECT"}
-    - Attempts: {retry_count}, Time Taken: {time_taken:.1f}s, Off-Tab Away: {off_tab_duration:.1f}s, Tab Switches: {tab_switches}, Mouse Idle: {mouse_idle_time:.1f}s, Typing Pauses: {typing_pauses}, Used Visual Scaffold: {used_visual_toggle}
-    
-    Output JSON ONLY:
-    {{"label": "{verified_label}", "narration": "One short, warm, empathetic sentence (under 18 words) in Kip's voice directly to the student."}}
-    """
-    res = call_llm_with_fallback(prompt, max_tokens=60, temp=0.5, timeout=5.0)
-    if res:
-        try:
-            import re
-            clean_res = res.strip()
-            if clean_res.startswith("```"):
-                clean_res = re.sub(r"^```(?:json)?\s*", "", clean_res)
-                clean_res = re.sub(r"\s*```$", "", clean_res)
-                
-            data = json.loads(clean_res)
-            v_label = str(data.get("label", verified_label)).strip().capitalize()
-            narration_text = str(data.get("narration", fallback_narration)).strip()
-            
-            if v_label not in ["Low", "Medium", "High"]:
-                v_label = verified_label
-                
-            print(f"[LIVE AI SUCCESS]: Verified={v_label} | Narration='{narration_text}'")
-            return v_label, narration_text, "OpenRouter AI (Layer 2 & 3 Active)"
-        except Exception as e:
-            print(f"[LLM PARSE NOTICE]: {e} | Raw output: '{res}'")
+        Question Context:
+        - Text: {q_text}
+        - Type: {q_type}, Difficulty: {q_diff}, Length: {q_len} chars
+        
+        Student Telemetry:
+        - Answer Status: {"CORRECT" if is_correct else "INCORRECT"}
+        - Retries: {retry_count}, Time Taken: {time_taken:.1f}s, Off-Tab Away: {off_tab_duration:.1f}s, Tab Switches: {tab_switches}, Mouse Idle: {mouse_idle_time:.1f}s
+        
+        Auditing Rules:
+        1. If CORRECT -> verified_label MUST be "Low".
+        2. If Hard/Medium question with 0 tab switches and time > 20s -> audit to "Low" or "Medium" (Deep Thinking Allowance).
+        3. If INCORRECT < 2.0s on Easy MCQ -> audit to "Medium" (Impulsive misclick).
+        4. If 2+ retries or high idle/off-tab -> audit to "High".
+        5. Otherwise -> keep prediction ({predicted_label}).
+        
+        Output JSON ONLY:
+        {{"label": "Low|Medium|High", "audit_reasoning": "Short technical justification."}}
+        """
+        res = call_llm_with_fallback(prompt, max_tokens=60, temp=0.5, timeout=5.0)
+        if res:
             try:
                 import re
-                label_match = re.search(r'"label"\s*:\s*"(Low|Medium|High)"', res, re.IGNORECASE)
-                narration_match = re.search(r'"narration"\s*:\s*"([^"]+)"', res)
+                clean_res = res.strip()
+                if clean_res.startswith("```"):
+                    clean_res = re.sub(r"^```(?:json)?\s*", "", clean_res)
+                    clean_res = re.sub(r"\s*```$", "", clean_res)
+                    
+                data = json.loads(clean_res)
+                v_label = str(data.get("label", rule_verified_label)).strip().capitalize()
                 
-                v_label = label_match.group(1).capitalize() if label_match else verified_label
-                narration_text = narration_match.group(1).strip() if narration_match else fallback_narration
-                return v_label, narration_text, "OpenRouter AI (Regex Fallback)"
-            except Exception:
-                pass
-            
-    return verified_label, fallback_narration, "Backend Persona Engine (Layer 2 & 3 Active)"
+                if v_label in ["Low", "Medium", "High"]:
+                    verified_label = v_label
+                    ai_source_badge = "Layer 2 LLM Auditor Active (OpenRouter)"
+                    print(f"[LAYER 2 LLM AUDITOR SUCCESS]: Layer 1={predicted_label} -> Layer 2 LLM Verified={verified_label}")
+            except Exception as e:
+                print(f"[LAYER 2 AUDIT NOTICE]: {e} | Using Rule Auditor fallback: {rule_verified_label}")
+
+    # Layer 3: Pure Backend Persona Engine (Empathetic Speech & UI Interventions)
+    kip_narration = get_static_fallback_narration(verified_label, sub_skill)
+    return verified_label, kip_narration, ai_source_badge
 
 def init_db_if_needed():
     global db_initialized, use_postgres
