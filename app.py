@@ -153,7 +153,35 @@ def predict_frustration_level(retry_count, time_taken, tab_switches, mouse_idle_
     else:
         return "Low"
 
+OPENROUTER_API_KEY = os.environ.get("OPENROUTER_API_KEY")
 OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
+
+def call_openrouter_api(prompt, max_tokens=60, temp=0.5, timeout=2.5):
+    """Call OpenRouter API (openai/gpt-4o-mini) using standard library."""
+    if not OPENROUTER_API_KEY:
+        return None
+    try:
+        import urllib.request
+        url = 'https://openrouter.ai/api/v1/chat/completions'
+        payload = {
+            'model': 'openai/gpt-4o-mini',
+            'messages': [{'role': 'user', 'content': prompt}],
+            'max_tokens': max_tokens,
+            'temperature': temp
+        }
+        headers = {
+            'Content-Type': 'application/json',
+            'Authorization': f'Bearer {OPENROUTER_API_KEY}',
+            'HTTP-Referer': 'http://localhost:5000',
+            'X-Title': 'CALM Learning Companion'
+        }
+        req = urllib.request.Request(url, data=json.dumps(payload).encode('utf-8'), headers=headers)
+        res = urllib.request.urlopen(req, timeout=timeout)
+        data = json.loads(res.read().decode('utf-8'))
+        return data['choices'][0]['message']['content'].strip()
+    except Exception as e:
+        print(f"OpenRouter API call notice: {e}")
+        return None
 
 def call_openai_api(prompt, max_tokens=60, temp=0.5, timeout=1.5):
     """Call OpenAI API (gpt-4o-mini) using standard library."""
@@ -181,7 +209,12 @@ def call_openai_api(prompt, max_tokens=60, temp=0.5, timeout=1.5):
         return None
 
 def call_llm_with_fallback(prompt, max_tokens=60, temp=0.7, timeout=1.5):
-    """Try OpenAI API first, then Gemini models dynamically."""
+    """Try OpenRouter API first, then OpenAI, then Gemini models dynamically."""
+    if OPENROUTER_API_KEY:
+        res = call_openrouter_api(prompt, max_tokens=max_tokens, temp=temp, timeout=timeout)
+        if res:
+            return res
+
     if OPENAI_API_KEY:
         res = call_openai_api(prompt, max_tokens=max_tokens, temp=temp, timeout=timeout)
         if res:
