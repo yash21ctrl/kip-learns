@@ -296,17 +296,34 @@ def audit_and_narrate_with_llm(predicted_label, is_correct, retry_count, time_ta
     if res:
         try:
             import re
-            label_match = re.search(r'"label"\s*:\s*"(Low|Medium|High)"', res, re.IGNORECASE)
-            narration_match = re.search(r'"narration"\s*:\s*"([^"]+)"', res)
+            clean_res = res.strip()
+            if clean_res.startswith("```"):
+                clean_res = re.sub(r"^```(?:json)?\s*", "", clean_res)
+                clean_res = re.sub(r"\s*```$", "", clean_res)
+                
+            data = json.loads(clean_res)
+            verified_label = str(data.get("label", predicted_label)).strip().capitalize()
+            narration_text = str(data.get("narration", fallback_narration)).strip()
             
-            verified_label = label_match.group(1).capitalize() if label_match else predicted_label
-            narration_text = narration_match.group(1).strip() if narration_match else fallback_narration
+            if verified_label not in ["Low", "Medium", "High"]:
+                verified_label = predicted_label
+                
+            print(f"[LIVE AI SUCCESS]: Verified={verified_label} | Narration='{narration_text}'")
+            return verified_label, narration_text, "OpenRouter AI (Layer 2 & 3 Active)"
+        except Exception as e:
+            print(f"[LLM PARSE NOTICE]: {e} | Raw output: '{res}'")
+            try:
+                import re
+                label_match = re.search(r'"label"\s*:\s*"(Low|Medium|High)"', res, re.IGNORECASE)
+                narration_match = re.search(r'"narration"\s*:\s*"([^"]+)"', res)
+                
+                verified_label = label_match.group(1).capitalize() if label_match else predicted_label
+                narration_text = narration_match.group(1).strip() if narration_match else fallback_narration
+                return verified_label, narration_text, "OpenRouter AI (Regex Fallback)"
+            except Exception:
+                pass
             
-            return verified_label, narration_text
-        except Exception:
-            pass
-            
-    return predicted_label, fallback_narration
+    return predicted_label, fallback_narration, "Offline Dictionary Fallback"
 
 def init_db_if_needed():
     global db_initialized, use_postgres
@@ -647,12 +664,13 @@ def submit_answer():
         retry_count, time_taken, tab_switches, mouse_idle_time, typing_pauses, used_visual_toggle
     )
     
-    # 2. Unified Layer 2 + Layer 3 Single API Call (Strict 1.5s Timeout)
+    # 2. Unified Layer 2 + Layer 3 Single API Call (Strict 5.0s Timeout)
     if frustration_label:
         detected_frustration = frustration_label
         kip_narration = get_static_fallback_narration(detected_frustration, sub_skill_val)
+        ai_source = "Test Script Explicit Label"
     else:
-        detected_frustration, kip_narration = audit_and_narrate_with_llm(
+        detected_frustration, kip_narration, ai_source = audit_and_narrate_with_llm(
             pred_frustration, is_correct, retry_count, time_taken, tab_switches, mouse_idle_time, typing_pauses, used_visual_toggle, q_text=q_text_val, q_diff=q_diff_val, q_type=q_type_val, off_tab_duration=off_tab_duration, sub_skill=sub_skill_val
         )
         
@@ -695,6 +713,7 @@ def submit_answer():
         "retry_count_after": session["retry_counts"].get(q_id_str, 0),
         "frustration_level": detected_frustration,
         "kip_narration": kip_narration,
+        "ai_source": ai_source,
         "trigger_reset_mission": trigger_reset_mission,
         "reset_mission": reset_mission
     })
