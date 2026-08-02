@@ -156,7 +156,7 @@ def predict_frustration_level(retry_count, time_taken, tab_switches, mouse_idle_
 OPENROUTER_API_KEY = os.environ.get("OPENROUTER_API_KEY")
 OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
 
-def call_openrouter_api(prompt, max_tokens=60, temp=0.5, timeout=2.5):
+def call_openrouter_api(prompt, max_tokens=60, temp=0.5, timeout=5.0):
     """Call OpenRouter API (openai/gpt-4o-mini) using standard library."""
     key = os.environ.get("OPENROUTER_API_KEY")
     if not key:
@@ -179,9 +179,11 @@ def call_openrouter_api(prompt, max_tokens=60, temp=0.5, timeout=2.5):
         req = urllib.request.Request(url, data=json.dumps(payload).encode('utf-8'), headers=headers)
         res = urllib.request.urlopen(req, timeout=timeout)
         data = json.loads(res.read().decode('utf-8'))
-        return data['choices'][0]['message']['content'].strip()
+        text = data['choices'][0]['message']['content'].strip()
+        print(f"[OPENROUTER AI SUCCESS]: {text}")
+        return text
     except Exception as e:
-        print(f"OpenRouter API call notice: {e}")
+        print(f"[OPENROUTER API NOTICE]: {e}")
         return None
 
 def call_openai_api(prompt, max_tokens=60, temp=0.5, timeout=1.5):
@@ -210,7 +212,7 @@ def call_openai_api(prompt, max_tokens=60, temp=0.5, timeout=1.5):
         print(f"OpenAI API call notice: {e}")
         return None
 
-def call_llm_with_fallback(prompt, max_tokens=60, temp=0.7, timeout=2.5):
+def call_llm_with_fallback(prompt, max_tokens=60, temp=0.7, timeout=5.0):
     """Try OpenRouter API first, then OpenAI, then Gemini models dynamically."""
     if os.environ.get("OPENROUTER_API_KEY"):
         res = call_openrouter_api(prompt, max_tokens=max_tokens, temp=temp, timeout=timeout)
@@ -290,7 +292,7 @@ def audit_and_narrate_with_llm(predicted_label, is_correct, retry_count, time_ta
     Output JSON ONLY:
     {{"label": "Low|Medium|High", "narration": "One short, warm, empathetic sentence (under 18 words) in Kip's voice directly to the student."}}
     """
-    res = call_llm_with_fallback(prompt, max_tokens=60, temp=0.5, timeout=1.5)
+    res = call_llm_with_fallback(prompt, max_tokens=60, temp=0.5, timeout=5.0)
     if res:
         try:
             import re
