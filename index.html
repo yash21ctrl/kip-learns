@@ -745,17 +745,12 @@
             document.getElementById("optionsContainer").appendChild(skipBtn);
           }
           
-          // Optional Reset Break Button (NEVER force an automatic screen takeover popup!)
-          if (resData.trigger_reset_mission && resData.reset_mission && !document.getElementById("resetBreakBtn")) {
-            const resetBtn = document.createElement("button");
-            resetBtn.id = "resetBreakBtn";
-            resetBtn.className = "primary-btn";
-            resetBtn.style.background = "linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%)";
-            resetBtn.style.boxShadow = "0 4px 14px rgba(139, 92, 246, 0.4)";
-            resetBtn.style.marginTop = "10px";
-            resetBtn.innerText = "Take a 5-sec Reset Break 🧘";
-            resetBtn.onclick = () => triggerResetTakeover(resData.reset_mission);
-            document.getElementById("optionsContainer").appendChild(resetBtn);
+          // Automatic Screen Takeover Modal on High Frustration!
+          if (resData.frustration_level === "High" || resData.trigger_reset_mission) {
+            const mission = resData.reset_mission || { type: "breathing", prompt: "Take a deep breath. Inhale... and exhale..." };
+            setTimeout(() => {
+              triggerResetTakeover(mission);
+            }, 600);
           }
         }
 
