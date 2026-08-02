@@ -1,0 +1,878 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CALM - Adaptive Learning Companion</title>
+  <!-- Google Fonts: Inter & Outfit -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Outfit:wght@400;600;700;800&display=swap" rel="stylesheet">
+  
+  <style>
+    :root {
+      --bg-gradient: linear-gradient(135deg, #0f0c1b 0%, #15102a 50%, #0c0914 100%);
+      --card-bg: rgba(22, 17, 45, 0.7);
+      --card-border: rgba(99, 102, 241, 0.15);
+      --indigo-glow: rgba(99, 102, 241, 0.4);
+      --rose-glow: rgba(244, 63, 94, 0.4);
+      
+      --color-low: #6366f1;
+      --color-medium: #f59e0b;
+      --color-high: #f43f5e;
+      --color-success: #10b981;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg-gradient);
+      color: #e2e8f0;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      overflow-x: hidden;
+    }
+
+    /* Gradient Blobs in Background */
+    .blob {
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(100px);
+      z-index: 0;
+      opacity: 0.25;
+    }
+    .blob-indigo {
+      top: 10%;
+      left: 15%;
+      width: 400px;
+      height: 400px;
+      background: #4f46e5;
+    }
+    .blob-purple {
+      bottom: 10%;
+      right: 15%;
+      width: 450px;
+      height: 450px;
+      background: #7c3aed;
+    }
+
+    /* Container */
+    .app-container {
+      width: 100%;
+      max-width: 800px;
+      padding: 24px;
+      z-index: 1;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+
+    /* Glassmorphic Cards */
+    .glass-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 24px;
+      padding: 32px;
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3), 
+                  inset 0 1px 2px rgba(255, 255, 255, 0.05);
+      transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    h1, h2, h3 {
+      font-family: 'Outfit', sans-serif;
+      font-weight: 700;
+    }
+
+    /* Setup / Welcome Screen */
+    .setup-screen {
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 20px;
+    }
+    .setup-title {
+      font-size: 32px;
+      background: linear-gradient(to right, #a5b4fc, #c084fc);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 8px;
+    }
+    .input-group {
+      width: 100%;
+      max-width: 320px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      text-align: left;
+    }
+    .input-label {
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: #94a3b8;
+      font-weight: 600;
+    }
+    .text-input {
+      background: rgba(15, 12, 27, 0.6);
+      border: 1px solid rgba(99, 102, 241, 0.3);
+      border-radius: 12px;
+      padding: 14px 16px;
+      color: #fff;
+      font-size: 16px;
+      outline: none;
+      transition: all 0.3s;
+    }
+    .text-input:focus {
+      border-color: #6366f1;
+      box-shadow: 0 0 12px rgba(99, 102, 241, 0.2);
+    }
+    .primary-btn {
+      background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+      border: none;
+      border-radius: 12px;
+      color: #fff;
+      padding: 14px 28px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      box-shadow: 0 4px 14px rgba(99, 102, 241, 0.4);
+      transition: all 0.3s;
+      margin-top: 10px;
+    }
+    .primary-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(99, 102, 241, 0.6);
+    }
+
+    /* Main Learning Interface Layout */
+    .layout {
+      display: grid;
+      grid-template-columns: 1fr 280px;
+      gap: 24px;
+    }
+    @media (max-width: 768px) {
+      .layout {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* Question Container */
+    .question-box {
+      min-height: 350px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+    .question-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-b: 1px solid rgba(255, 255, 255, 0.05);
+      padding-bottom: 12px;
+      margin-bottom: 20px;
+    }
+    .topic-tag {
+      background: rgba(99, 102, 241, 0.15);
+      border: 1px solid rgba(99, 102, 241, 0.3);
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 12px;
+      color: #a5b4fc;
+      font-weight: 600;
+    }
+    .difficulty-tag {
+      font-size: 11px;
+      text-transform: uppercase;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+    }
+    .difficulty-easy { color: var(--color-success); }
+    .difficulty-medium { color: var(--color-medium); }
+    .difficulty-hard { color: var(--color-high); }
+
+    .question-text {
+      font-size: 20px;
+      font-weight: 500;
+      line-height: 1.5;
+      margin-bottom: 24px;
+      color: #f8fafc;
+    }
+
+    /* Options / Answer Buttons */
+    .options-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .option-card {
+      background: rgba(15, 12, 27, 0.4);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 16px;
+      padding: 16px 20px;
+      font-size: 15px;
+      font-weight: 500;
+      cursor: pointer;
+      text-align: left;
+      color: #cbd5e1;
+      transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+      outline: none;
+    }
+    .option-card:hover {
+      background: rgba(99, 102, 241, 0.1);
+      border-color: rgba(99, 102, 241, 0.4);
+      color: #fff;
+      transform: translateX(4px);
+    }
+    .option-card:active {
+      transform: translateX(2px);
+    }
+
+    /* Mascot Panel (Kip Widget) */
+    .mascot-panel {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      align-self: start;
+    }
+    .kip-bubble-card {
+      position: relative;
+      border-radius: 20px;
+      padding: 20px;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+      transition: border-color 0.4s;
+    }
+    .kip-state-low { border-color: var(--color-low); box-shadow: 0 0 15px rgba(99, 102, 241, 0.1); }
+    .kip-state-medium { border-color: var(--color-medium); box-shadow: 0 0 15px rgba(245, 158, 11, 0.1); }
+    .kip-state-high { border-color: var(--color-high); box-shadow: 0 0 15px rgba(244, 63, 94, 0.15); }
+    .kip-state-success { border-color: var(--color-success); box-shadow: 0 0 15px rgba(16, 185, 129, 0.15); }
+
+    .kip-avatar {
+      width: 72px;
+      height: 72px;
+      border-radius: 50%;
+      background: rgba(15, 12, 27, 0.6);
+      border: 2px solid currentColor;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 36px;
+      transition: transform 0.3s ease;
+      cursor: pointer;
+    }
+    .kip-avatar:hover {
+      transform: scale(1.1) rotate(5deg);
+    }
+    .kip-badge {
+      font-size: 10px;
+      background: rgba(15, 12, 27, 0.8);
+      padding: 4px 10px;
+      border-radius: 12px;
+      font-weight: 600;
+      letter-spacing: 0.03em;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      color: #94a3b8;
+    }
+    .kip-dialogue {
+      font-size: 13px;
+      line-height: 1.4;
+      color: #cbd5e1;
+      font-style: italic;
+    }
+
+    /* Kip Reasoning Balloon (Tap Expand) */
+    .reasoning-balloon {
+      background: #110e24;
+      border: 1px solid rgba(99, 102, 241, 0.3);
+      border-radius: 16px;
+      padding: 16px;
+      font-size: 11px;
+      font-family: monospace;
+      color: #a5b4fc;
+      line-height: 1.4;
+      display: none;
+      animation: fadeIn 0.3s ease forwards;
+    }
+    .reasoning-header {
+      font-family: 'Outfit', sans-serif;
+      font-weight: 700;
+      color: #818cf8;
+      margin-bottom: 8px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    /* Takeover Reset Mission Takeover Modal */
+    .reset-modal {
+      position: fixed;
+      inset: 0;
+      background: rgba(8, 6, 16, 0.95);
+      backdrop-filter: blur(12px);
+      z-index: 100;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+    .reset-card {
+      max-width: 440px;
+      width: 100%;
+      background: #15112c;
+      border: 2px solid #6366f1;
+      border-radius: 28px;
+      padding: 40px 32px;
+      text-align: center;
+      box-shadow: 0 10px 40px rgba(99, 102, 241, 0.25);
+      animation: zoomIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 20px;
+    }
+    .reset-emoji {
+      font-size: 64px;
+      animation: bounce 2s infinite;
+    }
+    .reset-title {
+      font-size: 24px;
+      color: #fff;
+    }
+    .reset-prompt {
+      font-size: 15px;
+      line-height: 1.5;
+      color: #cbd5e1;
+    }
+    .timer-ring {
+      position: relative;
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      border: 4px solid rgba(99, 102, 241, 0.2);
+      border-top-color: #6366f1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      font-weight: 700;
+      color: #a5b4fc;
+      animation: spin 1s linear infinite;
+    }
+    .timer-val {
+      animation: none;
+    }
+
+    /* Silly Question Options */
+    .silly-options-list {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-top: 10px;
+    }
+    .silly-btn {
+      width: 100%;
+      background: rgba(15, 12, 27, 0.6);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      color: #cbd5e1;
+      padding: 12px;
+      border-radius: 12px;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 500;
+      transition: all 0.2s;
+    }
+    .silly-btn:hover {
+      background: #6366f1;
+      border-color: #6366f1;
+      color: #fff;
+    }
+
+    /* Animations */
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes zoomIn {
+      from { opacity: 0; transform: scale(0.9); }
+      to { opacity: 1; transform: scale(1); }
+    }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    @keyframes bounce {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-10px); }
+    }
+
+    /* Admin Quick Toggle Link */
+    .admin-link {
+      position: fixed;
+      bottom: 12px;
+      right: 12px;
+      font-size: 11px;
+      color: #475569;
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+    .admin-link:hover {
+      color: #818cf8;
+    }
+  </style>
+</head>
+<body>
+  
+  <div class="blob blob-indigo"></div>
+  <div class="blob blob-purple"></div>
+
+  <div class="app-container">
+    
+    <!-- 1. SETUP SCREEN -->
+    <div id="setupScreen" class="glass-card setup-screen">
+      <div style="font-size: 64px; animation: bounce 3s infinite;">😌</div>
+      <h2 class="setup-title">CALM Learning Portal</h2>
+      <p style="color: #94a3b8; font-size: 14px; max-width: 400px; margin-bottom: 12px;">
+        Welcome to your adaptive study companion. Enter your participant ID to load your session.
+      </p>
+      
+      <div class="input-group">
+        <label class="input-label" for="participantIdInput">Participant ID / Name</label>
+        <input type="text" id="participantIdInput" class="text-input" placeholder="e.g. StudentA">
+      </div>
+      
+      <button class="primary-btn" onclick="startSession()">Enter Classroom</button>
+    </div>
+
+    <!-- 2. MAIN CLASSROOM WORKSPACE -->
+    <div id="classroomWorkspace" class="layout" style="display: none;">
+      
+      <!-- Question Board -->
+      <div class="glass-card question-box">
+        <div>
+          <div class="question-header">
+            <span id="topicTag" class="topic-tag">Loading...</span>
+            <span id="difficultyTag" class="difficulty-tag">Easy</span>
+          </div>
+          
+          <div id="questionText" class="question-text">
+            Loading your question...
+          </div>
+        </div>
+
+        <div id="optionsContainer" class="options-grid">
+          <!-- Dynamic options loaded here -->
+        </div>
+      </div>
+
+      <!-- Kip Panel -->
+      <div class="mascot-panel">
+        <div id="kipCard" class="glass-card kip-bubble-card kip-state-low">
+          <div id="kipAvatar" class="kip-avatar" onclick="toggleKipReasoning()">😌</div>
+          <span class="kip-badge">Kip Companion</span>
+          <div id="aiBadge" style="font-size: 11px; color: #a5b4fc; margin-top: 4px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">🤖 OpenRouter AI (Layer 2 & 3 Active)</div>
+          <div id="kipSpeech" class="kip-dialogue">
+            Hi! I'm Kip. Let's do some questions together. I'm cheering you on!
+          </div>
+        </div>
+
+        <!-- Hidden reasoning box, expands on tapping Kip -->
+        <div id="reasoningBox" class="reasoning-balloon">
+          <div class="reasoning-header">
+            <span>🧠 Kip's AI Brain Log</span>
+            <span style="cursor: pointer;" onclick="toggleKipReasoning()">✕</span>
+          </div>
+          <div id="reasoningContent">
+            Loading telemetry metrics...
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+
+  <!-- 3. RESET Takeover MODAL -->
+  <div id="resetModal" class="reset-modal">
+    <div id="resetCard" class="reset-card">
+      <div id="resetEmoji" class="reset-emoji">🧘</div>
+      <h3 id="resetTitle" class="reset-title">Time for a Reset!</h3>
+      <p id="resetPrompt" class="reset-prompt">Take a deep breath. Inhale... and exhale...</p>
+      
+      <div id="resetTimerRing" class="timer-ring">
+        <span id="resetTimerVal" class="timer-val">5</span>
+      </div>
+      
+      <div id="sillyOptionsContainer" class="silly-options-list" style="display: none;">
+        <!-- Option buttons for silly questions -->
+      </div>
+    </div>
+  </div>
+
+  <a href="/?admin=true" class="admin-link">⚙️ Switch to Researcher Sandbox</a>
+
+  <!-- Script logic -->
+  <script>
+    let participantId = "Unknown";
+    let currentQuestionId = null;
+    let telemetry = {
+      tab_switches: 0,
+      mouse_idle_time: 0.0,
+      typing_pauses: 0,
+      backspaces: 0,
+      used_visual_toggle: false,
+      visual_level_used: 0,
+      off_tab_duration: 0.0
+    };
+    
+    let lastMouseActionTime = Date.now();
+    let idleCollectorInterval = null;
+    let timerInterval = null;
+    let offTabStartTime = null;
+
+    // Detect tab switches & Active Off-Tab Focus Clock
+    document.addEventListener("visibilitychange", () => {
+      if (document.hidden) {
+        telemetry.tab_switches++;
+        offTabStartTime = Date.now();
+      } else {
+        if (offTabStartTime) {
+          let awayMs = Date.now() - offTabStartTime;
+          let awaySec = Math.round(awayMs / 1000);
+          telemetry.off_tab_duration += (awayMs / 1000);
+          offTabStartTime = null;
+
+          if (awaySec >= 5) {
+            const avatar = document.getElementById("kipAvatar");
+            const speech = document.getElementById("kipSpeech");
+            avatar.innerText = "🧐";
+            speech.innerText = `FOCUSS! 🧐 You left me alone for ${awaySec} seconds! Let's get back into the groove!`;
+          }
+        }
+      }
+    });
+
+    // Detect mouse idle times
+    document.addEventListener("mousemove", () => { lastMouseActionTime = Date.now(); });
+    document.addEventListener("keypress", () => { lastMouseActionTime = Date.now(); });
+    
+    function startIdleTracker() {
+      if (idleCollectorInterval) clearInterval(idleCollectorInterval);
+      idleCollectorInterval = setInterval(() => {
+        let idleMs = Date.now() - lastMouseActionTime;
+        if (idleMs > 2000) { // 2 seconds threshold
+          telemetry.mouse_idle_time += 0.5; // accumulate idle half-seconds
+        }
+      }, 500);
+    }
+
+    function resetTelemetry() {
+      telemetry = {
+        tab_switches: 0,
+        mouse_idle_time: 0.0,
+        typing_pauses: 0,
+        backspaces: 0,
+        used_visual_toggle: false,
+        visual_level_used: 0
+      };
+      lastMouseActionTime = Date.now();
+    }
+
+    function startSession() {
+      const inputVal = document.getElementById("participantIdInput").value.trim();
+      if (!inputVal) {
+        alert("Please enter a name or participant ID!");
+        return;
+      }
+      participantId = inputVal;
+      document.getElementById("setupScreen").style.display = "none";
+      document.getElementById("classroomWorkspace").style.display = "grid";
+      
+      startIdleTracker();
+      loadNextQuestion();
+    }
+
+    async function loadNextQuestion() {
+      resetTelemetry();
+      const questionTextDiv = document.getElementById("questionText");
+      const optionsContainer = document.getElementById("optionsContainer");
+      
+      questionTextDiv.innerText = "Loading next question...";
+      optionsContainer.innerHTML = "";
+      
+      try {
+        const response = await fetch(`/get-next-question?participant_id=${encodeURIComponent(participantId)}`);
+        const data = await response.json();
+        
+        if (data.finished) {
+          questionTextDiv.innerHTML = `<span style="color: var(--color-success)">🎉 Workspace Completed!</span>`;
+          document.getElementById("topicTag").innerText = "Finished";
+          document.getElementById("difficultyTag").innerText = "";
+          optionsContainer.innerHTML = `<button class="primary-btn" onclick="location.reload()">Restart Class</button>`;
+          currentQuestionId = null;
+          return;
+        }
+
+        currentQuestionId = data.id;
+        
+        // Render headers
+        document.getElementById("topicTag").innerText = data.sub_topic || data.sub_skill || "General";
+        const diffTag = document.getElementById("difficultyTag");
+        diffTag.innerText = data.difficulty;
+        diffTag.className = `difficulty-tag difficulty-${data.difficulty}`;
+        
+        // Render text
+        questionTextDiv.innerText = data.text || data.question_text;
+        
+        // Render options (MCQ or Open ended)
+        if (data.options && data.options.length > 0) {
+          data.options.forEach(opt => {
+            const btn = document.createElement("button");
+            btn.className = "option-card";
+            btn.innerText = opt;
+            btn.onclick = () => submitAnswer(opt);
+            optionsContainer.appendChild(btn);
+          });
+        } else {
+          // Open text input fallback
+          const wrapper = document.createElement("div");
+          wrapper.style.display = "flex";
+          wrapper.style.flexDirection = "column";
+          wrapper.style.gap = "10px";
+          
+          const input = document.createElement("input");
+          input.type = "text";
+          input.className = "text-input";
+          input.placeholder = "Type your answer here...";
+          
+          const btn = document.createElement("button");
+          btn.className = "primary-btn";
+          btn.innerText = "Submit";
+          btn.onclick = () => submitAnswer(input.value);
+          
+          wrapper.appendChild(input);
+          wrapper.appendChild(btn);
+          optionsContainer.appendChild(wrapper);
+        }
+        
+      } catch (err) {
+        console.error(err);
+        questionTextDiv.innerText = "Connection lost. Reconnecting...";
+      }
+    }
+
+    async function submitAnswer(answer) {
+      if (!currentQuestionId) return;
+      
+      const payload = {
+        participant_id: participantId,
+        question_id: currentQuestionId,
+        answer_given: answer,
+        tab_switches: telemetry.tab_switches,
+        mouse_idle_time: telemetry.mouse_idle_time,
+        typing_pauses: telemetry.typing_pauses,
+        backspaces: telemetry.backspaces,
+        used_visual_toggle: telemetry.used_visual_toggle,
+        visual_level_used: telemetry.visual_level_used,
+        off_tab_duration: telemetry.off_tab_duration
+      };
+      
+      try {
+        const response = await fetch('/submit-answer', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        const resData = await response.json();
+        
+        // Update Kip state emoji dynamically based on frustration and live AI narration
+        updateKipMascot(resData.frustration_level, resData.correct, resData.kip_narration, resData.ai_source);
+
+        if (resData.correct || answer === "skipped") {
+          // Correct answer or skipped -> load next question
+          setTimeout(loadNextQuestion, 1500);
+        } else {
+          // Incorrect answer -> Do NOT change question! Let them try again.
+          // If they failed 1 or more times, display the Skip button
+          if (resData.retry_count_after >= 1 && !document.getElementById("skipBtn")) {
+            const skipBtn = document.createElement("button");
+            skipBtn.id = "skipBtn";
+            skipBtn.className = "primary-btn";
+            skipBtn.style.background = "linear-gradient(135deg, #f43f5e 0%, #e11d48 100%)";
+            skipBtn.style.boxShadow = "0 4px 14px rgba(244, 63, 94, 0.4)";
+            skipBtn.style.marginTop = "15px";
+            skipBtn.innerText = "Skip Question ➡️";
+            skipBtn.onclick = () => submitAnswer("skipped");
+            document.getElementById("optionsContainer").appendChild(skipBtn);
+          }
+          
+          // Optional Reset Break Button (NEVER force an automatic screen takeover popup!)
+          if (resData.trigger_reset_mission && resData.reset_mission && !document.getElementById("resetBreakBtn")) {
+            const resetBtn = document.createElement("button");
+            resetBtn.id = "resetBreakBtn";
+            resetBtn.className = "primary-btn";
+            resetBtn.style.background = "linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%)";
+            resetBtn.style.boxShadow = "0 4px 14px rgba(139, 92, 246, 0.4)";
+            resetBtn.style.marginTop = "10px";
+            resetBtn.innerText = "Take a 5-sec Reset Break 🧘";
+            resetBtn.onclick = () => triggerResetTakeover(resData.reset_mission);
+            document.getElementById("optionsContainer").appendChild(resetBtn);
+          }
+        }
+
+      } catch (err) {
+        console.error(err);
+        alert("Failed to submit. Please try again.");
+      }
+    }
+
+    function updateKipMascot(frustration, correct, aiNarration, aiSource) {
+      const card = document.getElementById("kipCard");
+      const avatar = document.getElementById("kipAvatar");
+      const speech = document.getElementById("kipSpeech");
+      const badge = document.getElementById("aiBadge");
+      
+      card.className = "glass-card kip-bubble-card";
+      if (badge && aiSource) {
+        badge.innerText = "🤖 " + aiSource;
+      }
+      
+      if (correct) {
+        card.classList.add("kip-state-success");
+        avatar.innerText = "🎉";
+        speech.innerText = aiNarration || "Amazing! You got it right. Keep up this amazing focus!";
+        // Auto reset to low after 3 seconds
+        setTimeout(() => {
+          card.className = "glass-card kip-bubble-card kip-state-low";
+          avatar.innerText = "😌";
+          speech.innerText = "I'm quietly cheering you on!";
+        }, 3000);
+        return;
+      }
+      
+      switch (frustration) {
+        case "Medium":
+          card.classList.add("kip-state-medium");
+          avatar.innerText = "🤔";
+          speech.innerText = aiNarration || "Interesting problem! Let's take another look at it. You can do this!";
+          break;
+        case "High":
+          card.classList.add("kip-state-high");
+          avatar.innerText = "😣";
+          speech.innerText = aiNarration || "Whew, that got a bit tricky. Want a quick 5-second reset break?";
+          break;
+        case "Low":
+        default:
+          card.classList.add("kip-state-low");
+          avatar.innerText = "😌";
+          speech.innerText = aiNarration || "Take your time. Every mistake is a step closer to understanding!";
+          break;
+      }
+    }
+
+    async function toggleKipReasoning() {
+      const box = document.getElementById("reasoningBox");
+      const content = document.getElementById("reasoningContent");
+      
+      if (box.style.display === "block") {
+        box.style.display = "none";
+        return;
+      }
+      
+      box.style.display = "block";
+      content.innerText = "Querying Kip's internal reasoning...";
+      
+      try {
+        const response = await fetch(`/get-kip-reasoning?participant_id=${encodeURIComponent(participantId)}`);
+        const data = await response.json();
+        
+        content.innerHTML = `
+          <strong>Frustration Verification:</strong> ${data.frustration_level}<br><br>
+          <strong>Kip AI Dialogue:</strong><br>
+          "${data.reasoning}"
+        `;
+      } catch (err) {
+        content.innerText = "Failed to load reasoning. Check that backend server is awake!";
+      }
+    }
+
+    function triggerResetTakeover(mission) {
+      const modal = document.getElementById("resetModal");
+      const prompt = document.getElementById("resetPrompt");
+      const title = document.getElementById("resetTitle");
+      const timerRing = document.getElementById("resetTimerRing");
+      const timerVal = document.getElementById("resetTimerVal");
+      const sillyOpts = document.getElementById("sillyOptionsContainer");
+      const emoji = document.getElementById("resetEmoji");
+      
+      modal.style.display = "flex";
+      sillyOpts.style.display = "none";
+      timerRing.style.display = "flex";
+      
+      // Determine mission details
+      if (mission.type === "silly_question") {
+        emoji.innerText = "🍕";
+        title.innerText = "Silly Break Time!";
+        prompt.innerText = mission.prompt;
+        timerRing.style.display = "none"; // No timer for questions
+        sillyOpts.innerHTML = "";
+        sillyOpts.style.display = "flex";
+        
+        const dummyOpts = ["Pizza 🍕", "Chocolate 🍫", "Ice Cream 🍦", "Apples 🍎"];
+        dummyOpts.forEach(opt => {
+          const btn = document.createElement("button");
+          btn.className = "silly-btn";
+          btn.innerText = opt;
+          btn.onclick = finishReset;
+          sillyOpts.appendChild(btn);
+        });
+      } else {
+        // Physical or Breathing
+        if (mission.type.includes("physical")) {
+          emoji.innerText = "🤸‍♂️";
+          title.innerText = "Quick Body Stretch!";
+        } else {
+          emoji.innerText = "🧘";
+          title.innerText = "Breathing Reset";
+        }
+        
+        prompt.innerText = mission.prompt;
+        timerRing.style.display = "flex";
+        
+        let seconds = 5;
+        timerVal.innerText = seconds;
+        
+        if (timerInterval) clearInterval(timerInterval);
+        timerInterval = setInterval(() => {
+          seconds--;
+          timerVal.innerText = seconds;
+          if (seconds <= 0) {
+            clearInterval(timerInterval);
+            finishReset();
+          }
+        }, 1000);
+      }
+    }
+
+    function finishReset() {
+      document.getElementById("resetModal").style.display = "none";
+      // Update mascot to happy/normal
+      updateKipMascot("Low", false);
+    }
+  </script>
+</body>
+</html>
