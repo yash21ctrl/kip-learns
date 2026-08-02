@@ -158,7 +158,8 @@ OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
 
 def call_openrouter_api(prompt, max_tokens=60, temp=0.5, timeout=2.5):
     """Call OpenRouter API (openai/gpt-4o-mini) using standard library."""
-    if not OPENROUTER_API_KEY:
+    key = os.environ.get("OPENROUTER_API_KEY")
+    if not key:
         return None
     try:
         import urllib.request
@@ -171,7 +172,7 @@ def call_openrouter_api(prompt, max_tokens=60, temp=0.5, timeout=2.5):
         }
         headers = {
             'Content-Type': 'application/json',
-            'Authorization': f'Bearer {OPENROUTER_API_KEY}',
+            'Authorization': f'Bearer {key}',
             'HTTP-Referer': 'http://localhost:5000',
             'X-Title': 'CALM Learning Companion'
         }
@@ -185,7 +186,8 @@ def call_openrouter_api(prompt, max_tokens=60, temp=0.5, timeout=2.5):
 
 def call_openai_api(prompt, max_tokens=60, temp=0.5, timeout=1.5):
     """Call OpenAI API (gpt-4o-mini) using standard library."""
-    if not OPENAI_API_KEY:
+    key = os.environ.get("OPENAI_API_KEY")
+    if not key:
         return None
     try:
         import urllib.request
@@ -198,7 +200,7 @@ def call_openai_api(prompt, max_tokens=60, temp=0.5, timeout=1.5):
         }
         headers = {
             'Content-Type': 'application/json',
-            'Authorization': f'Bearer {OPENAI_API_KEY}'
+            'Authorization': f'Bearer {key}'
         }
         req = urllib.request.Request(url, data=json.dumps(payload).encode('utf-8'), headers=headers)
         res = urllib.request.urlopen(req, timeout=timeout)
@@ -208,14 +210,14 @@ def call_openai_api(prompt, max_tokens=60, temp=0.5, timeout=1.5):
         print(f"OpenAI API call notice: {e}")
         return None
 
-def call_llm_with_fallback(prompt, max_tokens=60, temp=0.7, timeout=1.5):
+def call_llm_with_fallback(prompt, max_tokens=60, temp=0.7, timeout=2.5):
     """Try OpenRouter API first, then OpenAI, then Gemini models dynamically."""
-    if OPENROUTER_API_KEY:
+    if os.environ.get("OPENROUTER_API_KEY"):
         res = call_openrouter_api(prompt, max_tokens=max_tokens, temp=temp, timeout=timeout)
         if res:
             return res
 
-    if OPENAI_API_KEY:
+    if os.environ.get("OPENAI_API_KEY"):
         res = call_openai_api(prompt, max_tokens=max_tokens, temp=temp, timeout=timeout)
         if res:
             return res
@@ -259,7 +261,11 @@ def audit_and_narrate_with_llm(predicted_label, is_correct, retry_count, time_ta
     """
     fallback_narration = get_static_fallback_narration(predicted_label, sub_skill)
     
-    if not OPENAI_API_KEY and not GEMINI_API_KEY:
+    openrouter_key = os.environ.get("OPENROUTER_API_KEY")
+    openai_key = os.environ.get("OPENAI_API_KEY")
+    gemini_key = os.environ.get("GEMINI_API_KEY")
+    
+    if not openrouter_key and not openai_key and not gemini_key:
         return predicted_label, fallback_narration
         
     q_len = len(str(q_text))
