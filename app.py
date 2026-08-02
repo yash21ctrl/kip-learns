@@ -922,6 +922,7 @@ def reset_session():
 
 @app.route('/get-kip-reasoning', methods=['GET'])
 def get_kip_reasoning():
+    """Returns Kip's mascot speech 100% from pure backend Python persona matrix (0ms delay)."""
     participant_id = request.args.get('participant_id', 'Unknown')
     
     # Query database for the latest log record
@@ -961,45 +962,8 @@ def get_kip_reasoning():
         
     verified_frustration = latest_record.get("frustration_label", "Low")
     sub_skill = latest_record.get("sub_skill", "general")
-    retry_count = latest_record.get("retry_count", 0)
-    time_taken = latest_record.get("time_taken", 0.0)
     
-    openrouter_key = os.environ.get("OPENROUTER_API_KEY")
-    openai_key = os.environ.get("OPENAI_API_KEY")
-    gemini_key = os.environ.get("GEMINI_API_KEY")
-    
-    if not openrouter_key and not openai_key and not gemini_key:
-        reasoning = get_static_fallback_narration(verified_frustration, sub_skill)
-        return jsonify({
-            "frustration_level": verified_frustration,
-            "reasoning": reasoning
-        })
-        
-    # Query LLM for Kip's narration
-    prompt = f"""
-    You are Kip, a friendly, supportive AI learning buddy mascot on a student's screen.
-    Analyze the student's latest question performance and explain your thoughts in a warm, encouraging, conversational tone.
-    
-    Latest Question Details:
-    - Subject Sub-skill: {sub_skill}
-    - Verified student frustration level: {verified_frustration}
-    - Attempts/Retries on this question: {retry_count}
-    - Time spent: {time_taken:.1f} seconds
-    
-    Guidelines:
-    - Speak directly to the student as Kip (e.g. "I noticed you took your time...", "Hey, math can be tricky but you're doing great!").
-    - Keep it short: exactly 1 or 2 sentences.
-    - Be empathetic and non-judgmental. If they are frustrated, explain that it's okay to make mistakes.
-    - Do not mention technical terms like "classifier", "telemetry", "model", or "verification".
-    """
-    
-    res = call_llm_with_fallback(prompt, max_tokens=60, temp=0.7, timeout=5.0)
-    if res:
-        return jsonify({
-            "frustration_level": verified_frustration,
-            "reasoning": res
-        })
-        
+    # 100% PURE BACKEND PERSONA SPEECH ENGINE (0ms Delay, 0 Cost)
     reasoning = get_static_fallback_narration(verified_frustration, sub_skill)
     return jsonify({
         "frustration_level": verified_frustration,
