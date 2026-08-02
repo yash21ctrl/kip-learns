@@ -281,34 +281,32 @@ def perform_backend_cognitive_audit(predicted_label, is_correct, retry_count, ti
 
 def audit_and_narrate_with_llm(predicted_label, is_correct, retry_count, time_taken, tab_switches, mouse_idle_time, typing_pauses, used_visual_toggle, q_text="", q_diff="easy", q_type="mcq", off_tab_duration=0.0, sub_skill="general"):
     """
-    UNIFIED SINGLE CALL ARCHITECTURE (Layer 2 & Layer 3 Combined):
-    - 1 Single LLM API call with strict 2.5s timeout.
-    - Returns verified frustration label (Layer 2 Audit) + empathetic mascot speech (Layer 3 Narration).
-    - If API times out or fails, falls back INSTANTLY to pure backend rule auditor and persona dictionary in < 1ms!
+    EXACT ARCHITECTURE SEPARATION:
+    - Layer 1: ML Telemetry Model (Decision Tree prediction)
+    - Layer 2: Live LLM Cognitive Auditor (OpenRouter API audits & verifies frustration label ONLY)
+    - Layer 3: 100% Pure Backend Persona Engine (Curated Kip Speech & UI Interventions generated entirely in Python)
     """
     openrouter_key = os.environ.get("OPENROUTER_API_KEY")
     openai_key = os.environ.get("OPENAI_API_KEY")
     gemini_key = os.environ.get("GEMINI_API_KEY")
     
-    # Default Rule-Based Fallbacks
+    # Default Rule-Based Cognitive Audit
     rule_verified_label = perform_backend_cognitive_audit(
         predicted_label, is_correct, retry_count, time_taken, tab_switches, mouse_idle_time, typing_pauses, used_visual_toggle, q_diff=q_diff, q_type=q_type, off_tab_duration=off_tab_duration
     )
-    fallback_narration = get_static_fallback_narration(rule_verified_label, sub_skill)
-    
     verified_label = rule_verified_label
-    kip_narration = fallback_narration
-    ai_source_badge = "Backend Persona Engine (Layer 2 & 3 Active)"
+    ai_source_badge = "Backend Matrix Rule Auditor"
 
-    # Unified Layer 2 + 3 Single LLM Call (Strict 2.5s Timeout)
+    # LAYER 2: Live LLM Cognitive Auditor (Audits & Verifies Frustration Label ONLY)
     if openrouter_key or openai_key or gemini_key:
         q_len = len(str(q_text))
         prompt = f"""
-        You are Kip, the AI Cognitive Auditor & Mascot for an adaptive learning platform (CALM).
-        Evaluate this student attempt and respond in JSON format ONLY.
+        You are the Layer 2 Cognitive Auditor for an adaptive learning platform (CALM).
+        Your job is to audit the raw Layer 1 ML prediction ({predicted_label}) and determine the student's true cognitive frustration level.
         
-        Layer 1 ML Prediction: {predicted_label}
-        Question: {q_text} (Type: {q_type}, Difficulty: {q_diff}, Length: {q_len} chars)
+        Question Context:
+        - Text: {q_text}
+        - Type: {q_type}, Difficulty: {q_diff}, Length: {q_len} chars
         
         Student Telemetry:
         - Answer Status: {"CORRECT" if is_correct else "INCORRECT"}
@@ -322,9 +320,9 @@ def audit_and_narrate_with_llm(predicted_label, is_correct, retry_count, time_ta
         5. Otherwise -> keep prediction ({predicted_label}).
         
         Output JSON ONLY:
-        {{"label": "Low|Medium|High", "narration": "One short, warm, empathetic sentence (under 18 words) in Kip's voice directly to the student."}}
+        {{"label": "Low|Medium|High", "audit_reasoning": "Short technical justification."}}
         """
-        res = call_llm_with_fallback(prompt, max_tokens=60, temp=0.5, timeout=2.5)
+        res = call_llm_with_fallback(prompt, max_tokens=40, temp=0.3, timeout=2.0)
         if res:
             try:
                 import re
@@ -335,16 +333,16 @@ def audit_and_narrate_with_llm(predicted_label, is_correct, retry_count, time_ta
                     
                 data = json.loads(clean_res)
                 v_label = str(data.get("label", rule_verified_label)).strip().capitalize()
-                v_narration = str(data.get("narration", fallback_narration)).strip()
                 
                 if v_label in ["Low", "Medium", "High"]:
                     verified_label = v_label
-                    kip_narration = v_narration
-                    ai_source_badge = "OpenRouter AI (Layer 2 & 3 Active)"
-                    print(f"[UNIFIED LLM CALL SUCCESS]: Verified={verified_label} | Narration='{kip_narration}'")
+                    ai_source_badge = "Layer 2 LLM Auditor Active (OpenRouter)"
+                    print(f"[LAYER 2 LLM AUDITOR SUCCESS]: Layer 1={predicted_label} -> Layer 2 Verified={verified_label}")
             except Exception as e:
-                print(f"[LLM PARSE NOTICE]: {e} | Using Backend Fallback: {rule_verified_label}")
+                print(f"[LAYER 2 AUDIT NOTICE]: {e} | Using Rule Auditor fallback: {rule_verified_label}")
 
+    # LAYER 3: 100% PURE BACKEND PERSONA SPEECH ENGINE (Generated Entirely in Python)
+    kip_narration = get_static_fallback_narration(verified_label, sub_skill)
     return verified_label, kip_narration, ai_source_badge
 
 def init_db_if_needed():
