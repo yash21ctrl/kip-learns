@@ -153,25 +153,58 @@ def predict_frustration_level(retry_count, time_taken, tab_switches, mouse_idle_
     else:
         return "Low"
 
-def call_gemini_with_fallback(prompt, max_tokens=60, temp=0.7, timeout=2.5):
-    """Try multiple Gemini models dynamically to handle model deprecation and rate limits."""
-    models_to_try = ['gemini-2.0-flash', 'gemini-flash-latest', 'gemini-2.0-flash-lite', 'gemini-1.5-flash']
-    for m in models_to_try:
-        try:
-            model = genai.GenerativeModel(m)
-            response = model.generate_content(
-                prompt,
-                generation_config=genai.types.GenerationConfig(
-                    max_output_tokens=max_tokens,
-                    temperature=temp
-                ),
-                request_options={"timeout": timeout}
-            )
-            text = response.text.strip()
-            if text:
-                return text
-        except Exception as e:
-            continue
+OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
+
+def call_openai_api(prompt, max_tokens=60, temp=0.5, timeout=1.5):
+    """Call OpenAI API (gpt-4o-mini) using standard library."""
+    if not OPENAI_API_KEY:
+        return None
+    try:
+        import urllib.request
+        url = 'https://api.openai.com/v1/chat/completions'
+        payload = {
+            'model': 'gpt-4o-mini',
+            'messages': [{'role': 'user', 'content': prompt}],
+            'max_tokens': max_tokens,
+            'temperature': temp
+        }
+        headers = {
+            'Content-Type': 'application/json',
+            'Authorization': f'Bearer {OPENAI_API_KEY}'
+        }
+        req = urllib.request.Request(url, data=json.dumps(payload).encode('utf-8'), headers=headers)
+        res = urllib.request.urlopen(req, timeout=timeout)
+        data = json.loads(res.read().decode('utf-8'))
+        return data['choices'][0]['message']['content'].strip()
+    except Exception as e:
+        print(f"OpenAI API call notice: {e}")
+        return None
+
+def call_llm_with_fallback(prompt, max_tokens=60, temp=0.7, timeout=1.5):
+    """Try OpenAI API first, then Gemini models dynamically."""
+    if OPENAI_API_KEY:
+        res = call_openai_api(prompt, max_tokens=max_tokens, temp=temp, timeout=timeout)
+        if res:
+            return res
+            
+    if GEMINI_API_KEY:
+        models_to_try = ['gemini-2.0-flash', 'gemini-flash-latest', 'gemini-2.0-flash-lite', 'gemini-1.5-flash']
+        for m in models_to_try:
+            try:
+                model = genai.GenerativeModel(m)
+                response = model.generate_content(
+                    prompt,
+                    generation_config=genai.types.GenerationConfig(
+                        max_output_tokens=max_tokens,
+                        temperature=temp
+                    ),
+                    request_options={"timeout": timeout}
+                )
+                text = response.text.strip()
+                if text:
+                    return text
+            except Exception:
+                continue
     return None
 
 def get_static_fallback_narration(frustration, sub_skill):
@@ -193,7 +226,7 @@ def audit_and_narrate_with_llm(predicted_label, is_correct, retry_count, time_ta
     """
     fallback_narration = get_static_fallback_narration(predicted_label, sub_skill)
     
-    if not GEMINI_API_KEY:
+    if not OPENAI_API_KEY and not GEMINI_API_KEY:
         return predicted_label, fallback_narration
         
     q_len = len(str(q_text))
@@ -218,7 +251,7 @@ def audit_and_narrate_with_llm(predicted_label, is_correct, retry_count, time_ta
     Output JSON ONLY:
     {{"label": "Low|Medium|High", "narration": "One short, warm, empathetic sentence (under 18 words) in Kip's voice directly to the student."}}
     """
-    res = call_gemini_with_fallback(prompt, max_tokens=60, temp=0.5, timeout=1.5)
+    res = call_llm_with_fallback(prompt, max_tokens=60, temp=0.5, timeout=1.5)
     if res:
         try:
             import re
