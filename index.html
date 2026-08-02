@@ -523,10 +523,33 @@
     </div>
   </div>
 
-  <a href="/?admin=true" class="admin-link">⚙️ Switch to Researcher Sandbox</a>
+  <div style="position: fixed; bottom: 12px; right: 12px; display: flex; gap: 16px; z-index: 1000;">
+    <a href="#" onclick="triggerMLRetrain(); return false;" class="admin-link" style="position: static;">⚡ Retrain ML Model</a>
+    <a href="/export-training-csv" class="admin-link" style="position: static;">📊 Export CSV</a>
+  </div>
 
   <!-- Script logic -->
   <script>
+    async function triggerMLRetrain() {
+      try {
+        const res = await fetch(`${API_BASE}/retrain-model`, { method: 'POST' });
+        const data = await res.json();
+        if (data.success) {
+          alert(`🎉 ML Model Retrained Successfully!\n\n` +
+                `• Samples Trained: ${data.training_samples}\n` +
+                `• Accuracy: ${data.training_accuracy}\n\n` +
+                `Top Feature Importances:\n` +
+                `• Time Taken: ${(data.feature_importances.time_taken * 100).toFixed(1)}%\n` +
+                `• Mouse Idle Time: ${(data.feature_importances.mouse_idle_time * 100).toFixed(1)}%\n` +
+                `• Retries: ${(data.feature_importances.retry_count * 100).toFixed(1)}%`
+          );
+        } else {
+          alert(`Notice: ${data.message}`);
+        }
+      } catch (err) {
+        alert("Failed to reach retraining endpoint.");
+      }
+    }
     let participantId = "Unknown";
     let currentQuestionId = null;
     let telemetry = {

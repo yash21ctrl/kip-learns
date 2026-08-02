@@ -255,20 +255,46 @@ def get_static_fallback_narration(frustration, sub_skill):
     else:
         return random.choice(KIP_FALLBACK_REASONING["High"])
 
+def perform_backend_cognitive_audit(predicted_label, is_correct, retry_count, time_taken, tab_switches, mouse_idle_time, typing_pauses, used_visual_toggle, q_diff="easy", q_type="mcq", off_tab_duration=0.0):
+    """
+    Pure Backend Layer 2 Cognitive Auditor (Matrix Rules Engine).
+    Audits Layer 1 ML predictions using question type & difficulty allowances.
+    """
+    # 1. Correct answers are always validated as Low frustration
+    if is_correct:
+        return "Low"
+        
+    # 2. Hard or typing/match questions with deep thinking allowance (0 tab switches)
+    if (q_diff in ['hard', 'medium'] or q_type in ['typing', 'match']) and tab_switches == 0 and time_taken >= 20.0:
+        if retry_count <= 1:
+            return "Medium"  # Deep focused effort, not high frustration
+            
+    # 3. Impulsive fast misclicks on easy questions (< 2s)
+    if not is_correct and time_taken < 2.0 and q_diff == "easy":
+        return "Medium"
+        
+    # 4. Multiple retries or high off-tab/idle time confirm High frustration
+    if retry_count >= 2 or (mouse_idle_time >= 12.0 and off_tab_duration >= 8.0):
+        return "High"
+        
+    return predicted_label
+
 def audit_and_narrate_with_llm(predicted_label, is_correct, retry_count, time_taken, tab_switches, mouse_idle_time, typing_pauses, used_visual_toggle, q_text="", q_diff="easy", q_type="mcq", off_tab_duration=0.0, sub_skill="general"):
     """
-    Combined Layer 2 + Layer 3 Unified Single API Call.
-    Enforces a strict 1.5-second timeout.
-    If Gemini times out (> 1.5s) or fails, falls back INSTANTLY to pre-written offline fallback dictionary!
+    Combined Layer 2 + Layer 3 Engine.
+    Tries OpenRouter/LLM API first; falls back to pure Backend Cognitive Auditor & Kip Persona Matrix in < 1ms.
     """
-    fallback_narration = get_static_fallback_narration(predicted_label, sub_skill)
+    verified_label = perform_backend_cognitive_audit(
+        predicted_label, is_correct, retry_count, time_taken, tab_switches, mouse_idle_time, typing_pauses, used_visual_toggle, q_diff=q_diff, q_type=q_type, off_tab_duration=off_tab_duration
+    )
+    fallback_narration = get_static_fallback_narration(verified_label, sub_skill)
     
     openrouter_key = os.environ.get("OPENROUTER_API_KEY")
     openai_key = os.environ.get("OPENAI_API_KEY")
     gemini_key = os.environ.get("GEMINI_API_KEY")
     
     if not openrouter_key and not openai_key and not gemini_key:
-        return predicted_label, fallback_narration
+        return verified_label, fallback_narration, "Backend Persona Engine (Layer 2 & 3 Active)"
         
     q_len = len(str(q_text))
     prompt = f"""
@@ -276,21 +302,15 @@ def audit_and_narrate_with_llm(predicted_label, is_correct, retry_count, time_ta
     Evaluate this student attempt and respond in JSON format ONLY.
     
     Layer 1 ML Prediction: {predicted_label}
+    Verified Label: {verified_label}
     Question: {q_text} (Type: {q_type}, Difficulty: {q_diff}, Length: {q_len} chars)
     
     Student Telemetry:
     - Answer Status: {"CORRECT" if is_correct else "INCORRECT"}
     - Attempts: {retry_count}, Time Taken: {time_taken:.1f}s, Off-Tab Away: {off_tab_duration:.1f}s, Tab Switches: {tab_switches}, Mouse Idle: {mouse_idle_time:.1f}s, Typing Pauses: {typing_pauses}, Used Visual Scaffold: {used_visual_toggle}
     
-    Auditing Rules:
-    1. If CORRECT -> verified_frustration MUST be "Low".
-    2. If Hard MCQ/Typing/Match with 0 tab switches -> verify as "Low" or "Medium" (deep thinking).
-    3. If INCORRECT < 2.0s on Easy MCQ -> audit to "Medium" (Impulsive misclick).
-    4. If 2+ failed retries or (idle > 15s AND off_tab_duration >= 15s) -> confirm "High".
-    5. Otherwise -> keep Layer 1 ML prediction ({predicted_label}).
-    
     Output JSON ONLY:
-    {{"label": "Low|Medium|High", "narration": "One short, warm, empathetic sentence (under 18 words) in Kip's voice directly to the student."}}
+    {{"label": "{verified_label}", "narration": "One short, warm, empathetic sentence (under 18 words) in Kip's voice directly to the student."}}
     """
     res = call_llm_with_fallback(prompt, max_tokens=60, temp=0.5, timeout=5.0)
     if res:
@@ -302,14 +322,14 @@ def audit_and_narrate_with_llm(predicted_label, is_correct, retry_count, time_ta
                 clean_res = re.sub(r"\s*```$", "", clean_res)
                 
             data = json.loads(clean_res)
-            verified_label = str(data.get("label", predicted_label)).strip().capitalize()
+            v_label = str(data.get("label", verified_label)).strip().capitalize()
             narration_text = str(data.get("narration", fallback_narration)).strip()
             
-            if verified_label not in ["Low", "Medium", "High"]:
-                verified_label = predicted_label
+            if v_label not in ["Low", "Medium", "High"]:
+                v_label = verified_label
                 
-            print(f"[LIVE AI SUCCESS]: Verified={verified_label} | Narration='{narration_text}'")
-            return verified_label, narration_text, "OpenRouter AI (Layer 2 & 3 Active)"
+            print(f"[LIVE AI SUCCESS]: Verified={v_label} | Narration='{narration_text}'")
+            return v_label, narration_text, "OpenRouter AI (Layer 2 & 3 Active)"
         except Exception as e:
             print(f"[LLM PARSE NOTICE]: {e} | Raw output: '{res}'")
             try:
@@ -317,13 +337,13 @@ def audit_and_narrate_with_llm(predicted_label, is_correct, retry_count, time_ta
                 label_match = re.search(r'"label"\s*:\s*"(Low|Medium|High)"', res, re.IGNORECASE)
                 narration_match = re.search(r'"narration"\s*:\s*"([^"]+)"', res)
                 
-                verified_label = label_match.group(1).capitalize() if label_match else predicted_label
+                v_label = label_match.group(1).capitalize() if label_match else verified_label
                 narration_text = narration_match.group(1).strip() if narration_match else fallback_narration
-                return verified_label, narration_text, "OpenRouter AI (Regex Fallback)"
+                return v_label, narration_text, "OpenRouter AI (Regex Fallback)"
             except Exception:
                 pass
             
-    return predicted_label, fallback_narration, "Offline Dictionary Fallback"
+    return verified_label, fallback_narration, "Backend Persona Engine (Layer 2 & 3 Active)"
 
 def init_db_if_needed():
     global db_initialized, use_postgres
@@ -739,6 +759,67 @@ def get_dashboard_data():
             dashboard[sub_skill]["correct"] += 1
             
     return jsonify(dashboard)
+
+@app.route('/retrain-model', methods=['POST', 'GET'])
+def retrain_model_endpoint():
+    """Retrains the Layer 1 Decision Tree classifier on newly gathered student telemetry."""
+    try:
+        logs = load_logs()
+        rows = []
+        for l in logs:
+            lbl = l.get("frustration_label")
+            if lbl in ["Low", "Medium", "High"]:
+                mapping = {"Low": 0, "Medium": 1, "High": 2}
+                rows.append({
+                    "retry_count": l.get("retry_count", 0),
+                    "time_taken": float(l.get("time_taken", 0.0)),
+                    "tab_switches": int(l.get("tab_switches", 0)),
+                    "mouse_idle_time": float(l.get("mouse_idle_time", 0.0)),
+                    "typing_pauses": int(l.get("typing_pauses", 0)),
+                    "used_visual_toggle": 1 if l.get("used_visual_toggle") else 0,
+                    "target": mapping[lbl]
+                })
+
+        if len(rows) < 3:
+            return jsonify({
+                "success": False,
+                "message": f"Need at least 3 labeled session attempts to retrain the ML model. Currently have {len(rows)}.",
+                "samples_count": len(rows)
+            }), 400
+
+        from sklearn.tree import DecisionTreeClassifier
+        import joblib
+
+        X = [
+            [r["retry_count"], r["time_taken"], r["tab_switches"], r["mouse_idle_time"], r["typing_pauses"], r["used_visual_toggle"]]
+            for r in rows
+        ]
+        y = [r["target"] for r in rows]
+
+        feature_names = ['retry_count', 'time_taken', 'tab_switches', 'mouse_idle_time', 'typing_pauses', 'used_visual_toggle']
+
+        new_clf = DecisionTreeClassifier(max_depth=4, random_state=42)
+        new_clf.fit(X, y)
+
+        joblib.dump(new_clf, MODEL_FILE)
+        global clf
+        clf = new_clf
+
+        feature_importances = dict(zip(feature_names, [round(float(val), 3) for val in new_clf.feature_importances_]))
+        accuracy = round(float(new_clf.score(X, y)) * 100, 1)
+
+        print(f"[ML RETRAINING SUCCESS]: Trained on {len(rows)} samples | Accuracy: {accuracy}%")
+        return jsonify({
+            "success": True,
+            "message": f"ML Classifier successfully retrained on {len(rows)} real student telemetry records!",
+            "training_samples": len(rows),
+            "training_accuracy": f"{accuracy}%",
+            "feature_importances": feature_importances
+        })
+
+    except Exception as e:
+        print(f"Error retraining model: {e}")
+        return jsonify({"success": False, "error": str(e)}), 500
 
 @app.route('/export-training-csv', methods=['GET'])
 def export_training_csv():
