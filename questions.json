@@ -1,118 +1,243 @@
 {
-  "lessons": {
-    "math": [
-      {
-        "id": "les_math_01",
-        "topic": "Fractions",
-        "title": "Adding Same-Denominator Fractions",
-        "content": "When fractions share the same bottom number (denominator), keep that number the same and just add the top numbers (numerators)!"
-      },
-      {
-        "id": "les_math_02",
-        "topic": "Decimals",
-        "title": "Aligning Decimals",
-        "content": "Line up the decimal points vertically before adding or subtracting. It keeps place values like tenths and hundredths organized!"
-      }
-    ],
-    "science": [
-      {
-        "id": "les_sci_01",
-        "topic": "Photosynthesis",
-        "title": "How Plants Eat",
-        "content": "Plants take in Carbon Dioxide, Water, and Sunlight to create Oxygen and Sugar (Glucose). They make their own food!"
-      },
-      {
-        "id": "les_sci_02",
-        "topic": "States of Matter",
-        "title": "Solids, Liquids, and Gases",
-        "content": "Solids keep their shape, liquids flow to fit their container, and gases expand to fill any space available."
-      }
-    ],
-    "english": [
-      {
-        "id": "les_eng_01",
-        "topic": "Parts of Speech",
-        "title": "Nouns vs Adjectives",
-        "content": "A noun is a person, place, or thing. An adjective describes that noun (like 'blue sky' or 'fast car')."
-      },
-      {
-        "id": "les_eng_02",
-        "topic": "Verb Tenses",
-        "title": "Past vs Present Tense",
-        "content": "Present tense happens right now (I run). Past tense already happened (I ran)."
-      }
-    ]
+  "dataset_info": {
+    "total_questions": 54,
+    "target_audience": "ADHD & Dyscalculia Learners",
+    "comprehension_style": "High-Inference & Deep Reading Required",
+    "subjects_count": 3,
+    "questions_per_subject": 18
   },
   "questions": [
     {
       "id": "q_m_01",
       "subject": "math",
       "topic": "Fractions",
-      "sub_topic": "Same Denominator Addition",
+      "sub_topic": "Visual Fraction Addition",
       "difficulty": "easy",
       "type": "mcq",
       "question_text": "What is 1/5 + 2/5?",
-      "options": ["2/5", "3/5", "3/10", "1/5"],
+      "options": ["3/5", "3/10", "1/5"],
       "correct_answer": "3/5",
-      "hint": "Add the top numbers (1 + 2) and keep the bottom number (5)."
+      "hint": "Add 1 + 2 and keep 5 on the bottom."
     },
     {
       "id": "q_m_02",
       "subject": "math",
       "topic": "Fractions",
-      "sub_topic": "Same Denominator Addition",
+      "sub_topic": "Visual Fraction Addition",
       "difficulty": "easy",
       "type": "mcq",
-      "question_text": "What is 2/7 + 4/7?",
-      "options": ["6/7", "6/14", "8/7", "2/7"],
-      "correct_answer": "6/7",
-      "hint": "2 + 4 = 6. The bottom number stays 7."
+      "question_text": "What is 3/8 + 4/8?",
+      "options": ["7/16", "7/8", "12/8"],
+      "correct_answer": "7/8",
+      "hint": "Add the top numbers: 3 + 4."
     },
     {
       "id": "q_m_03",
       "subject": "math",
       "topic": "Fractions",
-      "sub_topic": "Same Denominator Addition",
+      "sub_topic": "Visual Fraction Addition",
       "difficulty": "medium",
-      "type": "mcq",
-      "question_text": "What is 3/8 + 4/8?",
-      "options": ["7/16", "1/8", "7/8", "12/8"],
-      "correct_answer": "7/8",
-      "hint": "3 eighths plus 4 eighths gives 7 eighths."
+      "type": "match",
+      "question_text": "Match the fraction addition problem to its correct sum:",
+      "match_pairs": [
+        { "left": "1/4 + 1/4", "right": "2/4" },
+        { "left": "2/6 + 3/6", "right": "5/6" },
+        { "left": "4/10 + 5/10", "right": "9/10" }
+      ],
+      "correct_answer": { "1/4 + 1/4": "2/4", "2/6 + 3/6": "5/6", "4/10 + 5/10": "9/10" },
+      "hint": "Match fractions with equal denominators."
     },
     {
       "id": "q_m_04",
       "subject": "math",
       "topic": "Fractions",
-      "sub_topic": "Same Denominator Addition",
+      "sub_topic": "Visual Fraction Addition",
       "difficulty": "medium",
-      "type": "mcq",
-      "question_text": "What is 5/12 + 2/12?",
-      "options": ["7/24", "7/12", "10/12", "3/12"],
-      "correct_answer": "7/12",
-      "hint": "5 + 2 = 7. Keep 12 on the bottom."
+      "type": "one_word",
+      "question_text": "What is the top number of a fraction called?",
+      "correct_answer": "Numerator",
+      "hint": "Starts with 'N'."
     },
     {
       "id": "q_m_05",
       "subject": "math",
       "topic": "Fractions",
-      "sub_topic": "Same Denominator Addition",
+      "sub_topic": "Visual Fraction Addition",
       "difficulty": "hard",
       "type": "mcq",
-      "question_text": "Simplify: What is 2/10 + 3/10 reduced to simplest form?",
-      "options": ["5/10", "1/2", "5/20", "2/5"],
+      "question_text": "Solve and reduce to simplest form: What is 2/10 + 3/10?",
+      "options": ["5/10", "1/2", "1/5"],
       "correct_answer": "1/2",
-      "hint": "2/10 + 3/10 = 5/10. Divide both 5 and 10 by 5."
+      "hint": "2/10 + 3/10 = 5/10, which reduces to 1/2."
+    },
+    {
+      "id": "q_m_06",
+      "subject": "math",
+      "topic": "Fractions",
+      "sub_topic": "Visual Fraction Addition",
+      "difficulty": "hard",
+      "type": "one_word",
+      "question_text": "If a pie is divided into 8 equal slices and you eat 3 slices, what fraction of the pie is left?",
+      "correct_answer": "5/8",
+      "hint": "Subtract 3 from 8 for the top number."
+    },
+    {
+      "id": "q_m_07",
+      "subject": "math",
+      "topic": "Patterns & Sequences",
+      "sub_topic": "Number & Visual Patterns",
+      "difficulty": "easy",
+      "type": "mcq",
+      "question_text": "What is the next number in the pattern: 2, 4, 6, 8, ___?",
+      "options": ["9", "10", "12"],
+      "correct_answer": "10",
+      "hint": "Add 2 to each step."
+    },
+    {
+      "id": "q_m_08",
+      "subject": "math",
+      "topic": "Patterns & Sequences",
+      "sub_topic": "Number & Visual Patterns",
+      "difficulty": "easy",
+      "type": "one_word",
+      "question_text": "Complete the sequence: 5, 10, 15, 20, ___.",
+      "correct_answer": "25",
+      "hint": "Count by fives."
+    },
+    {
+      "id": "q_m_09",
+      "subject": "math",
+      "topic": "Patterns & Sequences",
+      "sub_topic": "Number & Visual Patterns",
+      "difficulty": "medium",
+      "type": "match",
+      "question_text": "Match each number sequence to its rule:",
+      "match_pairs": [
+        { "left": "3, 6, 9, 12", "right": "Add 3" },
+        { "left": "20, 15, 10, 5", "right": "Subtract 5" },
+        { "left": "2, 4, 8, 16", "right": "Double the number" }
+      ],
+      "correct_answer": { "3, 6, 9, 12": "Add 3", "20, 15, 10, 5": "Subtract 5", "2, 4, 8, 16": "Double the number" },
+      "hint": "Look at how the numbers grow or shrink."
+    },
+    {
+      "id": "q_m_10",
+      "subject": "math",
+      "topic": "Patterns & Sequences",
+      "sub_topic": "Number & Visual Patterns",
+      "difficulty": "medium",
+      "type": "mcq",
+      "question_text": "Find the missing number: 100, 90, 80, ___, 60.",
+      "options": ["75", "70", "65"],
+      "correct_answer": "70",
+      "hint": "Subtract 10 each step."
+    },
+    {
+      "id": "q_m_11",
+      "subject": "math",
+      "topic": "Patterns & Sequences",
+      "sub_topic": "Number & Visual Patterns",
+      "difficulty": "hard",
+      "type": "one_word",
+      "question_text": "What is the next number in this pattern: 1, 4, 9, 16, ___?",
+      "correct_answer": "25",
+      "hint": "Square numbers: 1x1, 2x2, 3x3, 4x4, 5x5."
+    },
+    {
+      "id": "q_m_12",
+      "subject": "math",
+      "topic": "Patterns & Sequences",
+      "sub_topic": "Number & Visual Patterns",
+      "difficulty": "hard",
+      "type": "mcq",
+      "question_text": "Which number breaks the pattern: 5, 10, 15, 19, 25, 30?",
+      "options": ["10", "19", "25"],
+      "correct_answer": "19",
+      "hint": "Which number isn't a multiple of 5?"
+    },
+    {
+      "id": "q_m_13",
+      "subject": "math",
+      "topic": "Basic Geometry",
+      "sub_topic": "Shapes & Sides",
+      "difficulty": "easy",
+      "type": "one_word",
+      "question_text": "How many straight sides does a triangle have?",
+      "correct_answer": "3",
+      "hint": "Think of a tricycle's wheels."
+    },
+    {
+      "id": "q_m_14",
+      "subject": "math",
+      "topic": "Basic Geometry",
+      "sub_topic": "Shapes & Sides",
+      "difficulty": "easy",
+      "type": "mcq",
+      "question_text": "Which 2D shape has 4 equal straight sides and 4 right angles?",
+      "options": ["Rectangle", "Square", "Triangle"],
+      "correct_answer": "Square",
+      "hint": "All 4 sides are exactly equal."
+    },
+    {
+      "id": "q_m_15",
+      "subject": "math",
+      "topic": "Basic Geometry",
+      "sub_topic": "Shapes & Sides",
+      "difficulty": "medium",
+      "type": "match",
+      "question_text": "Match each 3D shape to its real-world object:",
+      "match_pairs": [
+        { "left": "Sphere", "right": "Basketball" },
+        { "left": "Cylinder", "right": "Soda Can" },
+        { "left": "Cube", "right": "Playing Dice" }
+      ],
+      "correct_answer": { "Sphere": "Basketball", "Cylinder": "Soda Can", "Cube": "Playing Dice" },
+      "hint": "Think about round, boxy, and tubular shapes."
+    },
+    {
+      "id": "q_m_16",
+      "subject": "math",
+      "topic": "Basic Geometry",
+      "sub_topic": "Shapes & Sides",
+      "difficulty": "medium",
+      "type": "mcq",
+      "question_text": "How many total corners (vertices) does a standard cube have?",
+      "options": ["6", "8", "12"],
+      "correct_answer": "8",
+      "hint": "Count 4 corners on top and 4 on bottom."
+    },
+    {
+      "id": "q_m_17",
+      "subject": "math",
+      "topic": "Basic Geometry",
+      "sub_topic": "Shapes & Sides",
+      "difficulty": "hard",
+      "type": "one_word",
+      "question_text": "What is the perimeter (in cm) of a rectangle with length 4 cm and width 2 cm?",
+      "correct_answer": "12",
+      "hint": "Add all 4 sides: 4 + 4 + 2 + 2."
+    },
+    {
+      "id": "q_m_18",
+      "subject": "math",
+      "topic": "Basic Geometry",
+      "sub_topic": "Shapes & Sides",
+      "difficulty": "hard",
+      "type": "mcq",
+      "question_text": "A polygon with 6 sides is called a:",
+      "options": ["Pentagon", "Hexagon", "Octagon"],
+      "correct_answer": "Hexagon",
+      "hint": "'Hex' stands for six."
     },
     {
       "id": "q_s_01",
       "subject": "science",
       "topic": "Photosynthesis",
-      "sub_topic": "Plant Inputs",
+      "sub_topic": "Inputs & Processes",
       "difficulty": "easy",
       "type": "mcq",
-      "question_text": "What gas do plants absorb from the air during photosynthesis?",
-      "options": ["Oxygen", "Carbon Dioxide", "Nitrogen", "Helium"],
+      "question_text": "What gas do green plants absorb from the air for photosynthesis?",
+      "options": ["Oxygen", "Carbon Dioxide", "Nitrogen"],
       "correct_answer": "Carbon Dioxide",
       "hint": "It starts with 'Carbon'."
     },
@@ -120,109 +245,445 @@
       "id": "q_s_02",
       "subject": "science",
       "topic": "Photosynthesis",
-      "sub_topic": "Plant Outputs",
+      "sub_topic": "Inputs & Processes",
       "difficulty": "easy",
-      "type": "mcq",
-      "question_text": "What gas do plants release into the air that humans breathe?",
-      "options": ["Carbon Dioxide", "Oxygen", "Methane", "Hydrogen"],
-      "correct_answer": "Oxygen",
-      "hint": "Humans need this gas to survive."
+      "type": "one_word",
+      "question_text": "What main source of light energy do outdoor plants use to make food?",
+      "correct_answer": "Sunlight",
+      "hint": "Light from the sky."
     },
     {
       "id": "q_s_03",
       "subject": "science",
       "topic": "Photosynthesis",
-      "sub_topic": "Energy Source",
+      "sub_topic": "Inputs & Processes",
       "difficulty": "medium",
-      "type": "mcq",
-      "question_text": "Where do plants get the primary energy needed for photosynthesis?",
-      "options": ["Soil nutrients", "Wind", "Sunlight", "Rainwater"],
-      "correct_answer": "Sunlight",
-      "hint": "Think of the bright light in the sky."
+      "type": "match",
+      "question_text": "Match each plant part to its main function:",
+      "match_pairs": [
+        { "left": "Roots", "right": "Absorbs water from soil" },
+        { "left": "Leaves", "right": "Main site of photosynthesis" },
+        { "left": "Stem", "right": "Transports water up the plant" }
+      ],
+      "correct_answer": { "Roots": "Absorbs water from soil", "Leaves": "Main site of photosynthesis", "Stem": "Transports water up the plant" },
+      "hint": "Think about where sunlight hits and where water enters."
     },
     {
       "id": "q_s_04",
       "subject": "science",
       "topic": "Photosynthesis",
-      "sub_topic": "Plant Energy Storage",
+      "sub_topic": "Inputs & Processes",
       "difficulty": "medium",
-      "type": "mcq",
-      "question_text": "What type of sugar do plants make during photosynthesis for food?",
-      "options": ["Glucose", "Sucrose", "Lactose", "Fructose"],
-      "correct_answer": "Glucose",
-      "hint": "It starts with 'G'."
+      "type": "one_word",
+      "question_text": "What green pigment inside plant cells absorbs light energy?",
+      "correct_answer": "Chlorophyll",
+      "hint": "Starts with 'Chloro'."
     },
     {
       "id": "q_s_05",
       "subject": "science",
       "topic": "Photosynthesis",
-      "sub_topic": "Cell Structure",
+      "sub_topic": "Inputs & Processes",
       "difficulty": "hard",
       "type": "mcq",
-      "question_text": "In which part of the plant cell does photosynthesis take place?",
-      "options": ["Nucleus", "Mitochondria", "Chloroplast", "Cell Wall"],
+      "question_text": "In which specific cell organelle does photosynthesis take place?",
+      "options": ["Mitochondria", "Chloroplast", "Nucleus"],
       "correct_answer": "Chloroplast",
-      "hint": "It contains the green pigment chlorophyll."
+      "hint": "Contains green chlorophyll."
+    },
+    {
+      "id": "q_s_06",
+      "subject": "science",
+      "topic": "Photosynthesis",
+      "sub_topic": "Inputs & Processes",
+      "difficulty": "hard",
+      "type": "one_word",
+      "question_text": "What type of sugar molecule do plants produce during photosynthesis?",
+      "correct_answer": "Glucose",
+      "hint": "Starts with 'G'."
+    },
+    {
+      "id": "q_s_07",
+      "subject": "science",
+      "topic": "States of Matter",
+      "sub_topic": "Solids, Liquids, and Gases",
+      "difficulty": "easy",
+      "type": "one_word",
+      "question_text": "What state of matter is water when it freezes completely into ice?",
+      "correct_answer": "Solid",
+      "hint": "It becomes hard."
+    },
+    {
+      "id": "q_s_08",
+      "subject": "science",
+      "topic": "States of Matter",
+      "sub_topic": "Solids, Liquids, and Gases",
+      "difficulty": "easy",
+      "type": "mcq",
+      "question_text": "Which state of matter takes the shape of its container but maintains a fixed volume?",
+      "options": ["Solid", "Liquid", "Gas"],
+      "correct_answer": "Liquid",
+      "hint": "Water and juice are examples."
+    },
+    {
+      "id": "q_s_09",
+      "subject": "science",
+      "topic": "States of Matter",
+      "sub_topic": "Solids, Liquids, and Gases",
+      "difficulty": "medium",
+      "type": "match",
+      "question_text": "Match each state transition to its correct process name:",
+      "match_pairs": [
+        { "left": "Liquid to Gas", "right": "Evaporation" },
+        { "left": "Solid to Liquid", "right": "Melting" },
+        { "left": "Gas to Liquid", "right": "Condensation" }
+      ],
+      "correct_answer": { "Liquid to Gas": "Evaporation", "Solid to Liquid": "Melting", "Gas to Liquid": "Condensation" },
+      "hint": "Think about ice melting or water boiling."
+    },
+    {
+      "id": "q_s_10",
+      "subject": "science",
+      "topic": "States of Matter",
+      "sub_topic": "Solids, Liquids, and Gases",
+      "difficulty": "medium",
+      "type": "one_word",
+      "question_text": "What process turns liquid water into water vapor when heated on a stove?",
+      "correct_answer": "Evaporation",
+      "hint": "Starts with 'E'."
+    },
+    {
+      "id": "q_s_11",
+      "subject": "science",
+      "topic": "States of Matter",
+      "sub_topic": "Solids, Liquids, and Gases",
+      "difficulty": "hard",
+      "type": "mcq",
+      "question_text": "At what temperature on the Celsius scale does pure water freeze into ice?",
+      "options": ["0°C", "32°C", "100°C"],
+      "correct_answer": "0°C",
+      "hint": "The standard freezing point."
+    },
+    {
+      "id": "q_s_12",
+      "subject": "science",
+      "topic": "States of Matter",
+      "sub_topic": "Solids, Liquids, and Gases",
+      "difficulty": "hard",
+      "type": "one_word",
+      "question_text": "What happens to the speed of molecules in a liquid when it is heated?",
+      "correct_answer": "Increases",
+      "hint": "Do they speed up or slow down?"
+    },
+    {
+      "id": "q_s_13",
+      "subject": "science",
+      "topic": "Forces & Motion",
+      "sub_topic": "Gravity & Friction",
+      "difficulty": "easy",
+      "type": "mcq",
+      "question_text": "What natural force pulls objects down toward the center of Earth?",
+      "options": ["Magnetism", "Gravity", "Friction"],
+      "correct_answer": "Gravity",
+      "hint": "Keeps your feet on the floor."
+    },
+    {
+      "id": "q_s_14",
+      "subject": "science",
+      "topic": "Forces & Motion",
+      "sub_topic": "Gravity & Friction",
+      "difficulty": "easy",
+      "type": "one_word",
+      "question_text": "What force slows down a sliding toy car when it moves across rough carpet?",
+      "correct_answer": "Friction",
+      "hint": "Resists movement."
+    },
+    {
+      "id": "q_s_15",
+      "subject": "science",
+      "topic": "Forces & Motion",
+      "sub_topic": "Gravity & Friction",
+      "difficulty": "medium",
+      "type": "match",
+      "question_text": "Match each physical surface or event to its force property:",
+      "match_pairs": [
+        { "left": "Smooth Ice", "right": "Low Friction" },
+        { "left": "Rough Sandpaper", "right": "High Friction" },
+        { "left": "Dropping a Ball", "right": "Gravity" }
+      ],
+      "correct_answer": { "Smooth Ice": "Low Friction", "Rough Sandpaper": "High Friction", "Dropping a Ball": "Gravity" },
+      "hint": "Slippery things have low friction."
+    },
+    {
+      "id": "q_s_16",
+      "subject": "science",
+      "topic": "Forces & Motion",
+      "sub_topic": "Gravity & Friction",
+      "difficulty": "medium",
+      "type": "one_word",
+      "question_text": "If you push a heavy box to the right, in which direction does friction push back?",
+      "correct_answer": "Left",
+      "hint": "Opposite to the movement."
+    },
+    {
+      "id": "q_s_17",
+      "subject": "science",
+      "topic": "Forces & Motion",
+      "sub_topic": "Gravity & Friction",
+      "difficulty": "hard",
+      "type": "mcq",
+      "question_text": "Who formulated the universal law of gravitation after observing an apple fall?",
+      "options": ["Albert Einstein", "Isaac Newton", "Galileo Galilei"],
+      "correct_answer": "Isaac Newton",
+      "hint": "Famous physicist Sir ___ Newton."
+    },
+    {
+      "id": "q_s_18",
+      "subject": "science",
+      "topic": "Forces & Motion",
+      "sub_topic": "Gravity & Friction",
+      "difficulty": "hard",
+      "type": "one_word",
+      "question_text": "What happens to the weight of an object if it travels to the Moon where gravity is weaker?",
+      "correct_answer": "Decreases",
+      "hint": "Does it get lighter or heavier?"
     },
     {
       "id": "q_e_01",
       "subject": "english",
       "topic": "Parts of Speech",
-      "sub_topic": "Adjectives",
+      "sub_topic": "Nouns, Verbs, and Adjectives",
       "difficulty": "easy",
       "type": "mcq",
-      "question_text": "Which word is an adjective in: 'The bright star shines'?",
-      "options": ["The", "bright", "star", "shines"],
-      "correct_answer": "bright",
-      "hint": "Which word describes what the star looks like?"
+      "question_text": "Which word is an adjective in the sentence: 'The fluffy cat slept on the rug'?",
+      "options": ["cat", "fluffy", "slept"],
+      "correct_answer": "fluffy",
+      "hint": "Describes the cat."
     },
     {
       "id": "q_e_02",
       "subject": "english",
       "topic": "Parts of Speech",
-      "sub_topic": "Nouns",
+      "sub_topic": "Nouns, Verbs, and Adjectives",
       "difficulty": "easy",
-      "type": "mcq",
-      "question_text": "Which word is a noun in: 'The dog barked loudly'?",
-      "options": ["The", "dog", "barked", "loudly"],
-      "correct_answer": "dog",
-      "hint": "Find the animal/thing in the sentence."
+      "type": "one_word",
+      "question_text": "What part of speech is an action word like 'run', 'jump', or 'write'?",
+      "correct_answer": "Verb",
+      "hint": "Action word."
     },
     {
       "id": "q_e_03",
       "subject": "english",
       "topic": "Parts of Speech",
-      "sub_topic": "Verbs",
+      "sub_topic": "Nouns, Verbs, and Adjectives",
       "difficulty": "medium",
-      "type": "mcq",
-      "question_text": "Which word is an action verb in: 'Maria quickly ran home'?",
-      "options": ["Maria", "quickly", "ran", "home"],
-      "correct_answer": "ran",
-      "hint": "What physical action did Maria do?"
+      "type": "match",
+      "question_text": "Match each highlighted word to its correct part of speech:",
+      "match_pairs": [
+        { "left": "She sang beautifully.", "right": "Adverb" },
+        { "left": "The blue car sped past.", "right": "Adjective" },
+        { "left": "London is a large city.", "right": "Proper Noun" }
+      ],
+      "correct_answer": { "She sang beautifully.": "Adverb", "The blue car sped past.": "Adjective", "London is a large city.": "Proper Noun" },
+      "hint": "Look at what each word modifies or names."
     },
     {
       "id": "q_e_04",
       "subject": "english",
       "topic": "Parts of Speech",
-      "sub_topic": "Adverbs",
+      "sub_topic": "Nouns, Verbs, and Adjectives",
       "difficulty": "medium",
-      "type": "mcq",
-      "question_text": "Which word is an adverb in: 'He sang sweetly'?",
-      "options": ["He", "sang", "sweetly", "song"],
-      "correct_answer": "sweetly",
-      "hint": "Which word describes HOW he sang (often ends in -ly)?"
+      "type": "one_word",
+      "question_text": "What pronoun best replaces the names in: 'Mark and Leo went to the park'?",
+      "correct_answer": "They",
+      "hint": "Plural pronoun."
     },
     {
       "id": "q_e_05",
       "subject": "english",
       "topic": "Parts of Speech",
-      "sub_topic": "Pronouns",
+      "sub_topic": "Nouns, Verbs, and Adjectives",
       "difficulty": "hard",
       "type": "mcq",
-      "question_text": "Which pronoun correctly replaces the underline: '<u>Sarah and Alex</u> went to school'?",
-      "options": ["He", "They", "We", "Them"],
-      "correct_answer": "They",
-      "hint": "Use a subject pronoun for more than one person."
+      "question_text": "Identify the adverb in this sentence: 'The quiet student spoke very softly.'",
+      "options": ["quiet", "student", "softly"],
+      "correct_answer": "softly",
+      "hint": "Ends in '-ly' and describes how they spoke."
+    },
+    {
+      "id": "q_e_06",
+      "subject": "english",
+      "topic": "Parts of Speech",
+      "sub_topic": "Nouns, Verbs, and Adjectives",
+      "difficulty": "hard",
+      "type": "one_word",
+      "question_text": "What type of noun represents an untouchable idea or feeling like 'happiness' or 'courage'?",
+      "correct_answer": "Abstract",
+      "hint": "Opposite of concrete."
+    },
+    {
+      "id": "q_e_07",
+      "subject": "english",
+      "topic": "Vocabulary & Words",
+      "sub_topic": "Synonyms and Antonyms",
+      "difficulty": "easy",
+      "type": "mcq",
+      "question_text": "What is a synonym for the word 'huge'?",
+      "options": ["Tiny", "Giant", "Narrow"],
+      "correct_answer": "Giant",
+      "hint": "Means very large."
+    },
+    {
+      "id": "q_e_08",
+      "subject": "english",
+      "topic": "Vocabulary & Words",
+      "sub_topic": "Synonyms and Antonyms",
+      "difficulty": "easy",
+      "type": "one_word",
+      "question_text": "What is the opposite (antonym) of the word 'ancient'?",
+      "correct_answer": "Modern",
+      "hint": "Means brand new or present day."
+    },
+    {
+      "id": "q_e_09",
+      "subject": "english",
+      "topic": "Vocabulary & Words",
+      "sub_topic": "Synonyms and Antonyms",
+      "difficulty": "medium",
+      "type": "match",
+      "question_text": "Match each word on the left to its correct antonym (opposite):",
+      "match_pairs": [
+        { "left": "Bravery", "right": "Cowardice" },
+        { "left": "Create", "right": "Destroy" },
+        { "left": "Expand", "right": "Shrink" }
+      ],
+      "correct_answer": { "Bravery": "Cowardice", "Create": "Destroy", "Expand": "Shrink" },
+      "hint": "Look for exact opposite meanings."
+    },
+    {
+      "id": "q_e_10",
+      "subject": "english",
+      "topic": "Vocabulary & Words",
+      "sub_topic": "Synonyms and Antonyms",
+      "difficulty": "medium",
+      "type": "one_word",
+      "question_text": "What word means 'a person who writes books'?",
+      "correct_answer": "Author",
+      "hint": "Starts with 'A'."
+    },
+    {
+      "id": "q_e_11",
+      "subject": "english",
+      "topic": "Vocabulary & Words",
+      "sub_topic": "Synonyms and Antonyms",
+      "difficulty": "hard",
+      "type": "mcq",
+      "question_text": "Complete the analogy: Doctor is to Hospital as Teacher is to _____.",
+      "options": ["Library", "School", "Office"],
+      "correct_answer": "School",
+      "hint": "Where does a teacher work?"
+    },
+    {
+      "id": "q_e_12",
+      "subject": "english",
+      "topic": "Vocabulary & Words",
+      "sub_topic": "Synonyms and Antonyms",
+      "difficulty": "hard",
+      "type": "one_word",
+      "question_text": "What is a synonym of the word 'reluctant'?",
+      "correct_answer": "Unwilling",
+      "hint": "Hesitant or not wanting to do something."
+    },
+    {
+      "id": "q_e_13",
+      "subject": "english",
+      "topic": "Reading Comprehension",
+      "sub_topic": "Deep Narrative Synthesis",
+      "passage": "For three weeks, the quiet harbor town prepared for the annual winter storm. Merchants boarded up windows, and sailors doubled the ropes binding their ships to the wooden piers. Old Captain Vance stood by the lighthouse, holding a bronze compass that hadn't spun toward magnetic north in forty years. He noticed the seagulls flying inland—a behavior that only occurred when atmospheric pressure dropped drastically within an hour. While the younger sailors laughed, believing the calm morning sun meant safety, Vance quietly dragged his small fishing boat entirely out of the water and locked it inside the stone boathouse.",
+      "difficulty": "easy",
+      "type": "comprehension",
+      "question_text": "Why did Captain Vance pull his boat completely out of the water while others ignored the threat?",
+      "options": [
+        "His broken bronze compass signaled an immediate storm direction.",
+        "He observed animal behavior shifts indicating a sharp drop in atmospheric pressure.",
+        "The young sailors ordered him to secure his boat in the stone boathouse."
+      ],
+      "correct_answer": "He observed animal behavior shifts indicating a sharp drop in atmospheric pressure.",
+      "hint": "Consider what the seagulls flying inland signified to Vance despite the sunny weather."
+    },
+    {
+      "id": "q_e_14",
+      "subject": "english",
+      "topic": "Reading Comprehension",
+      "sub_topic": "Deep Narrative Synthesis",
+      "passage": "For three weeks, the quiet harbor town prepared for the annual winter storm. Merchants boarded up windows, and sailors doubled the ropes binding their ships to the wooden piers. Old Captain Vance stood by the lighthouse, holding a bronze compass that hadn't spun toward magnetic north in forty years. He noticed the seagulls flying inland—a behavior that only occurred when atmospheric pressure dropped drastically within an hour. While the younger sailors laughed, believing the calm morning sun meant safety, Vance quietly dragged his small fishing boat entirely out of the water and locked it inside the stone boathouse.",
+      "difficulty": "easy",
+      "type": "one_word",
+      "question_text": "What setting element misled the younger sailors into feeling falsely safe?",
+      "correct_answer": "Sun",
+      "hint": "Refer to what illuminated the calm morning."
+    },
+    {
+      "id": "q_e_15",
+      "subject": "english",
+      "topic": "Reading Comprehension",
+      "sub_topic": "Deep Narrative Synthesis",
+      "passage": "For three weeks, the quiet harbor town prepared for the annual winter storm. Merchants boarded up windows, and sailors doubled the ropes binding their ships to the wooden piers. Old Captain Vance stood by the lighthouse, holding a bronze compass that hadn't spun toward magnetic north in forty years. He noticed the seagulls flying inland—a behavior that only occurred when atmospheric pressure dropped drastically within an hour. While the younger sailors laughed, believing the calm morning sun meant safety, Vance quietly dragged his small fishing boat entirely out of the water and locked it inside the stone boathouse.",
+      "difficulty": "medium",
+      "type": "match",
+      "question_text": "Match each character/group to their specific reaction to the impending storm based on reading the full text:",
+      "match_pairs": [
+        { "left": "Young Sailors", "right": "Relied on visual morning sunshine and laughed" },
+        { "left": "Captain Vance", "right": "Acted on ecological indicators to store his boat" },
+        { "left": "Merchants", "right": "Physically reinforced store windows against wind" }
+      ],
+      "correct_answer": {
+        "Young Sailors": "Relied on visual morning sunshine and laughed",
+        "Captain Vance": "Acted on ecological indicators to store his boat",
+        "Merchants": "Physically reinforced store windows against wind"
+      },
+      "hint": "Differentiate between reactions based on experience vs appearance."
+    },
+    {
+      "id": "q_e_16",
+      "subject": "english",
+      "topic": "Reading Comprehension",
+      "sub_topic": "Deep Narrative Synthesis",
+      "passage": "For three weeks, the quiet harbor town prepared for the annual winter storm. Merchants boarded up windows, and sailors doubled the ropes binding their ships to the wooden piers. Old Captain Vance stood by the lighthouse, holding a bronze compass that hadn't spun toward magnetic north in forty years. He noticed the seagulls flying inland—a behavior that only occurred when atmospheric pressure dropped drastically within an hour. While the younger sailors laughed, believing the calm morning sun meant safety, Vance quietly dragged his small fishing boat entirely out of the water and locked it inside the stone boathouse.",
+      "difficulty": "medium",
+      "type": "one_word",
+      "question_text": "Where specifically did Vance secure his vessel to prevent destruction?",
+      "correct_answer": "Boathouse",
+      "hint": "The stone structure at the end of the narrative."
+    },
+    {
+      "id": "q_e_17",
+      "subject": "english",
+      "topic": "Reading Comprehension",
+      "sub_topic": "Deep Narrative Synthesis",
+      "passage": "For three weeks, the quiet harbor town prepared for the annual winter storm. Merchants boarded up windows, and sailors doubled the ropes binding their ships to the wooden piers. Old Captain Vance stood by the lighthouse, holding a bronze compass that hadn't spun toward magnetic north in forty years. He noticed the seagulls flying inland—a behavior that only occurred when atmospheric pressure dropped drastically within an hour. While the younger sailors laughed, believing the calm morning sun meant safety, Vance quietly dragged his small fishing boat entirely out of the water and locked it inside the stone boathouse.",
+      "difficulty": "hard",
+      "type": "comprehension",
+      "question_text": "What underlying theme is demonstrated by comparing Vance's actions to the younger sailors' response?",
+      "options": [
+        "Experience interprets subtle environmental warnings that superficial observation misses.",
+        "Mechanical navigation tools are always superior to natural instinct during weather events.",
+        "Coastal towns rarely recover from unexpected seasonal atmospheric changes."
+      ],
+      "correct_answer": "Experience interprets subtle environmental warnings that superficial observation misses.",
+      "hint": "Analyze why Vance saw threat where others saw clear sky."
+    },
+    {
+      "id": "q_e_18",
+      "subject": "english",
+      "topic": "Reading Comprehension",
+      "sub_topic": "Deep Narrative Synthesis",
+      "passage": "For three weeks, the quiet harbor town prepared for the annual winter storm. Merchants boarded up windows, and sailors doubled the ropes binding their ships to the wooden piers. Old Captain Vance stood by the lighthouse, holding a bronze compass that hadn't spun toward magnetic north in forty years. He noticed the seagulls flying inland—a behavior that only occurred when atmospheric pressure dropped drastically within an hour. While the younger sailors laughed, believing the calm morning sun meant safety, Vance quietly dragged his small fishing boat entirely out of the water and locked it inside the stone boathouse.",
+      "difficulty": "hard",
+      "type": "one_word",
+      "question_text": "What word describes the psychological state of the young sailors before the storm arrived?",
+      "correct_answer": "Complacent",
+      "hint": "Overconfident or unworried despite unseen danger."
     }
   ]
 }
