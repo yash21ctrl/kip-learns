@@ -5,7 +5,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import accuracy_score, classification_report
 
-CSV_FILE = "training_sessions_relabeled.csv"
+CSV_FILE = "training_sessions_cleaned.csv"
 MODEL_FILE = "frustration_model.joblib"
 
 def extract_features(row):
