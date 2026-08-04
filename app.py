@@ -132,20 +132,38 @@ KIP_FALLBACK_REASONING = {
 def predict_frustration_level(retry_count, time_taken, tab_switches, mouse_idle_time, typing_pauses, used_visual_toggle):
     """
     Layer 1: Frustration Prediction
-    Pure Decision Tree classifier execution (frustration_model.joblib).
-    Returns the raw prediction output from the machine learning model.
+    High-accuracy RandomForestClassifier execution (frustration_model.joblib).
+    Computes 8 engineered features matching train_rf_model.py.
     """
     if clf is not None:
         try:
             used_vt = 1 if used_visual_toggle else 0
-            features = [[retry_count, time_taken, tab_switches, mouse_idle_time, typing_pauses, used_vt]]
+            t_time = max(0.1, float(time_taken))
+            idle_ratio = round(float(mouse_idle_time) / t_time, 3)
+            retry_density = round(float(retry_count) / t_time, 3)
+            
+            features = [[
+                int(retry_count),
+                float(time_taken),
+                int(tab_switches),
+                float(mouse_idle_time),
+                int(typing_pauses),
+                used_vt,
+                idle_ratio,
+                retry_density
+            ]]
+            
+            expected_n_features = getattr(clf, "n_features_in_", 8)
+            if expected_n_features == 6:
+                features = [[int(retry_count), float(time_taken), int(tab_switches), float(mouse_idle_time), int(typing_pauses), used_vt]]
+                
             pred = clf.predict(features)[0]
             mapping = {0: "Low", 1: "Medium", 2: "High"}
             return mapping.get(pred, "Low")
         except Exception as e:
             print(f"Error running model prediction: {e}. Using fallback prediction.")
             
-    # Rule-based fallback if Decision Tree model is not loaded
+    # Rule-based fallback if model file is uninitialized
     if retry_count >= 2 or tab_switches >= 2:
         return "High"
     elif retry_count == 1 or mouse_idle_time > 4.0:
@@ -264,17 +282,20 @@ def perform_backend_cognitive_audit(predicted_label, is_correct, retry_count, ti
     if is_correct:
         return "Low"
         
-    # 2. Hard or typing/match questions with deep thinking allowance (0 tab switches)
-    if (q_diff in ['hard', 'medium'] or q_type in ['typing', 'match']) and tab_switches == 0 and time_taken >= 20.0:
-        if retry_count <= 1:
+    t_time = max(0.1, float(time_taken))
+    idle_ratio = float(mouse_idle_time) / t_time
+
+    # 2. Hard, comprehension, or matching questions with deep thinking allowance (0 tab switches)
+    if (q_diff in ['hard', 'medium'] or q_type in ['comprehension', 'match', 'typing']) and tab_switches == 0 and time_taken >= 15.0:
+        if retry_count <= 1 and idle_ratio < 0.4:
             return "Medium"  # Deep focused effort, not high frustration
             
-    # 3. Impulsive fast misclicks on easy questions (< 2s)
-    if not is_correct and time_taken < 2.0 and q_diff == "easy":
+    # 3. Impulsive fast misclicks on easy questions (< 3s)
+    if not is_correct and time_taken < 3.0 and q_diff == "easy":
         return "Medium"
         
     # 4. Multiple retries or high off-tab/idle time confirm High frustration
-    if retry_count >= 2 or (mouse_idle_time >= 12.0 and off_tab_duration >= 8.0):
+    if retry_count >= 2 or idle_ratio >= 0.5 or (mouse_idle_time >= 10.0 and off_tab_duration >= 8.0):
         return "High"
         
     return predicted_label
@@ -282,8 +303,8 @@ def perform_backend_cognitive_audit(predicted_label, is_correct, retry_count, ti
 def audit_and_narrate_with_llm(predicted_label, is_correct, retry_count, time_taken, tab_switches, mouse_idle_time, typing_pauses, used_visual_toggle, q_text="", q_diff="easy", q_type="mcq", off_tab_duration=0.0, sub_skill="general"):
     """
     EXACT ARCHITECTURE SEPARATION:
-    - Layer 1: ML Telemetry Model (Decision Tree prediction)
-    - Layer 2: Live LLM Cognitive Auditor (OpenRouter API audits & verifies frustration label ONLY)
+    - Layer 1: ML Telemetry Model (High-Accuracy RandomForest prediction)
+    - Layer 2: Live LLM Cognitive Auditor (Audits & verifies frustration label with strict benchmark rules)
     - Layer 3: 100% Pure Backend Persona Engine (Curated Kip Speech & UI Interventions generated entirely in Python)
     """
     openrouter_key = os.environ.get("OPENROUTER_API_KEY")
@@ -300,29 +321,34 @@ def audit_and_narrate_with_llm(predicted_label, is_correct, retry_count, time_ta
     # LAYER 2: Live LLM Cognitive Auditor (Audits & Verifies Frustration Label ONLY)
     if openrouter_key or openai_key or gemini_key:
         q_len = len(str(q_text))
+        t_time = max(0.1, float(time_taken))
+        idle_ratio = round(float(mouse_idle_time) / t_time, 2)
+        
         prompt = f"""
         You are the Layer 2 Cognitive Auditor for an adaptive learning platform (CALM).
-        Your job is to audit the raw Layer 1 ML prediction ({predicted_label}) and determine the student's true cognitive frustration level.
+        Audit the raw Layer 1 ML prediction ({predicted_label}) to determine the student's true cognitive frustration level.
         
         Question Context:
         - Text: {q_text}
+        - Subject/Skill: {sub_skill}
         - Type: {q_type}, Difficulty: {q_diff}, Length: {q_len} chars
         
         Student Telemetry:
         - Answer Status: {"CORRECT" if is_correct else "INCORRECT"}
-        - Retries: {retry_count}, Time Taken: {time_taken:.1f}s, Off-Tab Away: {off_tab_duration:.1f}s, Tab Switches: {tab_switches}, Mouse Idle: {mouse_idle_time:.1f}s
+        - Retries: {retry_count}, Time Taken: {time_taken:.1f}s, Off-Tab Away: {off_tab_duration:.1f}s
+        - Tab Switches: {tab_switches}, Mouse Idle: {mouse_idle_time:.1f}s (Freeze Ratio: {idle_ratio*100:.0f}%)
         
         Auditing Rules:
         1. If CORRECT -> verified_label MUST be "Low".
-        2. If Hard/Medium question with 0 tab switches and time > 20s -> audit to "Low" or "Medium" (Deep Thinking Allowance).
-        3. If INCORRECT < 2.0s on Easy MCQ -> audit to "Medium" (Impulsive misclick).
-        4. If 2+ retries or high idle/off-tab -> audit to "High".
+        2. If Hard/Comprehension/Match question with 0 tab switches, low idle ratio (<40%), and time >= 15s -> audit to "Low" or "Medium" (Deep Focused Reading).
+        3. If INCORRECT < 3.0s on Easy MCQ -> audit to "Medium" (Impulsive fast misclick).
+        4. If 2+ retries OR Freeze Ratio >= 50% OR Off-Tab Away >= 10s -> audit to "High".
         5. Otherwise -> keep prediction ({predicted_label}).
         
         Output JSON ONLY:
         {{"label": "Low|Medium|High", "audit_reasoning": "Short technical justification."}}
         """
-        res = call_llm_with_fallback(prompt, max_tokens=40, temp=0.3, timeout=2.0)
+        res = call_llm_with_fallback(prompt, max_tokens=50, temp=0.2, timeout=3.0)
         if res:
             try:
                 import re
@@ -333,11 +359,12 @@ def audit_and_narrate_with_llm(predicted_label, is_correct, retry_count, time_ta
                     
                 data = json.loads(clean_res)
                 v_label = str(data.get("label", rule_verified_label)).strip().capitalize()
+                reasoning_str = str(data.get("audit_reasoning", "Verified by LLM Auditor")).strip()
                 
                 if v_label in ["Low", "Medium", "High"]:
                     verified_label = v_label
                     ai_source_badge = "Layer 2 LLM Auditor Active (OpenRouter)"
-                    print(f"[LAYER 2 LLM AUDITOR SUCCESS]: Layer 1={predicted_label} -> Layer 2 Verified={verified_label}")
+                    print(f"[LAYER 2 LLM AUDITOR SUCCESS]: Layer 1={predicted_label} -> Verified={verified_label} | Reason='{reasoning_str}'")
             except Exception as e:
                 print(f"[LAYER 2 AUDIT NOTICE]: {e} | Using Rule Auditor fallback: {rule_verified_label}")
 
